@@ -77,8 +77,17 @@
   </nav>
   <div class="pdots-wrap" style="padding-top:18px;border-top:1px solid var(--outline-var)">
     <div style="font-size:12px;font-weight:700;color:var(--on-surface-var);margin-bottom:10px">动态取色</div>
-    <!-- 色板圆点：prify.js 的 buildPdots() 会注入 4 个按钮 -->
-    <div class="pdots" id="pdotsDrawer"></div>
+    <!-- 读系统强调色圆钮：排在色板圆点最前面、与色板点同径 30×30（.icon-btn.tonal + 行内尺寸覆盖 42px）。
+         #pdotsDrawer 用 display:contents 让圆点与圆钮并进同一个 flex 行，圆钮是兄弟节点，
+         buildPdots() 只往 #pdotsDrawer 里放静态圆点、不会动它。读到的系统色不新增圆点，
+         而是涂在这个钮身上（.swatch + prify.js paintSwatch）。widget / md 页没有抽屉也没有这个圆钮 -->
+    <div class="pdots">
+      <button class="icon-btn tonal rip" id="sysAccentBtn" data-sys-accent data-tip="读取系统强调色" aria-label="读取系统强调色" style="width:30px;height:30px"><svg class="icon" style="width:16px;height:16px"><use href="#i-devices"/></svg></button>
+      <button class="icon-btn tonal rip" data-color-pick data-tip="打开调色盘" aria-label="打开调色盘" style="width:30px;height:30px"><svg class="icon" style="width:16px;height:16px"><use href="#i-palette"/></svg></button>
+      <div id="pdotsDrawer" style="display:contents"></div>
+    </div>
+    <!-- 色板圆点：prify.js 的 buildPdots() 按 PALETTES 生成，固定 20 个静态色板；动态色（自定义 / 系统）
+         不往这里加圆点，颜色显示在左边两个入口圆钮身上 -->
   </div>
 </aside>
 
@@ -471,7 +480,12 @@
       <div class="foot-brand">
         <a class="brand" href="#top"><svg><use href="#i-logo"/></svg>Prify<em>Design</em></a>
         <p>基础模板页：完整外壳 + 表单与核心组件的纯 HTML 展示。</p>
-        <div class="pdots" id="pdotsFoot"></div>
+        <!-- 页脚色板行：读系统强调色的圆钮同样放最前，#pdotsFoot 用 display:contents 并入同一 flex 行 -->
+        <div class="pdots">
+          <button class="icon-btn tonal rip" data-sys-accent data-tip="读取系统强调色" aria-label="读取系统强调色" style="width:30px;height:30px"><svg class="icon" style="width:16px;height:16px"><use href="#i-devices"/></svg></button>
+          <button class="icon-btn tonal rip" data-color-pick data-tip="打开调色盘" aria-label="打开调色盘" style="width:30px;height:30px"><svg class="icon" style="width:16px;height:16px"><use href="#i-palette"/></svg></button>
+          <div id="pdotsFoot" style="display:contents"></div>
+        </div>
       </div>
       <div class="foot-col"><h4>页面分区</h4><a href="#components">组件库</a><a href="#forms">表单控件</a><a href="#feedback">反馈与状态</a><a href="#navs">导航组件</a><a href="#cta">订阅更新</a></div>
       <div class="foot-col"><h4>页面元素</h4><a href="#top">回到顶部</a><a href="#hero">Hero 演示</a><a href="#btns">按钮家族</a><a href="#formWin">表单窗口</a><a href="#badges">徽章与提示</a></div>
@@ -550,6 +564,27 @@
 </div>
 
 <!-- ====== Snackbar（全页单例，snackbar(text, actionText, cb) 调用） ====== -->
+<!-- ====== 调色盘弹窗（全页单例；入口圆钮带 data-color-pick，一个基础色驱动整套令牌） ====== -->
+<div class="dialog-wrap" id="pickerWrap">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+    <div class="dialog-icon"><svg class="icon"><use href="#i-palette"/></svg></div>
+    <h3 id="pickTitle">调色盘</h3>
+    <p class="dtext">拖二维面取色、拉色条调色相，整套主题令牌实时换算；点「应用」保存到本机。</p>
+    <div class="pick-sv" id="pickSV" aria-label="饱和度与明度取色区"><i class="pick-cursor" id="pickCursor"></i></div>
+    <input class="pick-hue" id="pickHue" type="range" min="0" max="360" step="1" value="262" aria-label="色相">
+    <p class="pick-warn" id="pickWarn">当前颜色太接近黑 / 白 / 灰，无法生成整套色板。请提高饱和度和明度再应用。</p>
+    <div class="pick-foot">
+      <span class="pick-dot" id="pickSwatch" aria-hidden="true"></span>
+      <input class="pick-hex" id="pickHex" type="text" autocomplete="off" spellcheck="false" aria-label="十六进制色值">
+      <button class="icon-btn tonal rip" id="pickBtnRandom" data-tip="随机" aria-label="随机取色"><svg class="icon"><use href="#i-sparkles"/></svg></button>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn btn-text rip" id="pickBtnCancel">取消</button>
+      <button class="btn btn-filled rip pick-ok" id="pickBtnApply">应用</button>
+    </div>
+  </div>
+</div>
+
 <div class="snackbar" id="snackbar"><span class="sb-bar"></span><span id="sbText"></span><button id="sbAction"></button></div>
 
 <!-- ====== FAB：滚过 560px 浮出，点击回顶 ====== -->

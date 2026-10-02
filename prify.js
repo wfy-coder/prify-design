@@ -73,13 +73,391 @@ document.addEventListener('click', e => {
   svg.querySelectorAll('animate,animateTransform').forEach(n => { try { n.beginElement(); } catch (_) {} });
 }, true);
 
+/* ================= 系统强调色：色数学与令牌生成（纯函数，无 DOM，可单独抽取跑单测） ==========
+   按钮触发流程的第二步：拿到 AccentColor 的 RGB 后，把它当主色，套用紫罗兰的 19 个令牌
+   模板换算到 OKLCH —— 只替换色相，明度/色度沿用模板，次要色与第三色保持相对色偏移 ——
+   再做色域裁剪、浅色 primary 白字对比度回压，最后拼成浅色 + 深色两套整套令牌。
+   测试用的起止标记：SYSPAL_BEGIN / SYSPAL_END。 */
+const SYSPAL_BEGIN = 1;
+const SYS_TOK_L = {
+  primary: '#6750A4', 'primary-container': '#EADDFF', 'on-primary-container': '#21005D',
+  secondary: '#625B71', 'secondary-container': '#E8DEF8', 'on-secondary-container': '#1D192B',
+  tertiary: '#7D5260', 'tertiary-container': '#FFD8E4', 'on-tertiary-container': '#31111D'
+};
+const SYS_TOK_D = {
+  primary: '#D0BCFF', 'on-primary': '#381E72', 'primary-container': '#4F378B',
+  'on-primary-container': '#EADDFF', secondary: '#CCC2DC', 'secondary-container': '#4A4458',
+  'on-secondary-container': '#E8DEF8', tertiary: '#EFB8C8', 'tertiary-container': '#633B48',
+  'on-tertiary-container': '#FFD8E4'
+};
+const _s2l = c => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+const _l2s = c => c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+const _clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+function _hex2rgb(h) {
+  h = String(h).replace('#', '');
+  if (h.length === 3) h = h.replace(/(.)/g, '$1$1');
+  return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255);
+}
+function _rgb2hex(r, g, b) {
+  const q = n => Math.max(0, Math.min(255, Math.round(n * 255))).toString(16).padStart(2, '0');
+  return '#' + q(r) + q(g) + q(b);
+}
+/* linear sRGB -> LMS 与 LMS -> linear sRGB（与配色脚本同一组系数） */
+const _S2L = [[0.4122214708, 0.5363325363, 0.0514459929],
+              [0.2119034982, 0.6806995451, 0.1073969566],
+              [0.0883024619, 0.2817188376, 0.6299787005]];
+const _L2S = [[4.0767416621, -3.3077115913, 0.2309699292],
+              [-1.2684380046, 2.6097574011, -0.3413193965],
+              [-0.0041960863, -0.7034186147, 1.7076147010]];
+const _mul = (m, v) => [
+  m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+  m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+  m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]
+];
+function _rgb2lch(hex) {
+  const [r, g, b] = _hex2rgb(hex);
+  const lms = _mul(_S2L, [_s2l(r), _s2l(g), _s2l(b)]).map(v => Math.cbrt(Math.max(0, v)));
+  const [l, m, s] = lms;
+  const L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s;
+  const A = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+  return { L, C: Math.hypot(A, B), h: (Math.atan2(B, A) * 180 / Math.PI + 360) % 360 };
+}
+function _lch2rgb(L, C, h) {
+  const rad = h * Math.PI / 180, a = C * Math.cos(rad), b = C * Math.sin(rad);
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  return _mul(_L2S, [l_ * l_ * l_, m_ * m_ * m_, s_ * s_ * s_]).map(_l2s);
+}
+const _lch2hex = (L, C, h) => _rgb2hex(..._lch2rgb(L, C, h).map(_clamp01));
+const _ok = rgb => rgb.every(v => v >= -1e-4 && v <= 1 + 1e-4);
+function _gamutC(L, C, h) {
+  if (_ok(_lch2rgb(L, C, h))) return C;
+  let lo = 0, hi = C;
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (_ok(_lch2rgb(L, mid, h))) lo = mid; else hi = mid; }
+  return lo;
+}
+function _contrast(h1, h2) {
+  const lum = h => { const [r, g, b] = _hex2rgb(h).map(_s2l); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  let a = lum(h1), b = lum(h2);
+  if (a < b) { const t = a; a = b; b = t; }
+  return (a + 0.05) / (b + 0.05);
+}
+/* 主色：保证白字可读（≥4.5），必要时逐档压暗明度 */
+function _fitPrimary(L, C, h) {
+  for (let i = 0; i < 60; i++) {
+    const L2 = Math.max(0.06, L - i * 0.01), C2 = _gamutC(L2, C, h), hx = _lch2hex(L2, C2, h);
+    if (i === 0 || _contrast(hx, '#FFFFFF') >= 4.5) return { L: L2, C: C2, hex: hx };
+  }
+  return { L, C: _gamutC(L, C, h), hex: _lch2hex(L, _gamutC(L, C, h), h) };
+}
+/* 生成整套令牌：refs = 模板令牌表，pri = 模板主色的 OKLCH，acc = 系统色的 OKLCH */
+function _buildTokens(refs, pri, acc, isDark) {
+  const out = {};
+  for (const k in refs) {
+    const t = _rgb2lch(refs[k]);
+    const h = (acc.h + ((t.h - pri.h + 180) % 360 - 180) + 360) % 360;
+    let L = t.L, C = _gamutC(t.L, t.C, h);
+    if (!isDark && k === 'primary') { const f = _fitPrimary(t.L, t.C, h); L = f.L; C = f.C; out[k] = f.hex; continue; }
+    out[k] = _lch2hex(L, C, h);
+  }
+  const [r, g, b] = _hex2rgb(out.primary).map(v => Math.round(v * 255));
+  out['primary-glow'] = `rgba(${r},${g},${b},${isDark ? '.42' : '.38'})`;
+  return out;
+}
+/* 系统色 hex → { light, dark }；色度太低（近黑白灰）返回 null 表示拒绝 */
+function sysBuildPalette(hex) {
+  const acc = _rgb2lch(hex);
+  if (!acc || !isFinite(acc.L) || acc.C < 0.02) return null;
+  return {
+    light: _buildTokens(SYS_TOK_L, _rgb2lch(SYS_TOK_L.primary), acc, false),
+    dark: _buildTokens(SYS_TOK_D, _rgb2lch(SYS_TOK_D.primary), acc, true)
+  };
+}
+function sysCssText(p, key) {
+  key = key || 'system';
+  const fmt = o => Object.keys(o).map(k => `--${k}:${o[k]}`).join(';');
+  return `html[data-palette="${key}"]{${fmt(p.light)}}\nhtml[data-palette="${key}"][data-theme="dark"]{${fmt(p.dark)}}`;
+}
+/* HSV <-> hex：调色盘的二维取色面（饱和度 × 明度）与色相条用，纯函数可单测 */
+function _hsv2hex(h, s, v) {
+  h = ((h % 360) + 360) % 360; s = _clamp01(s); v = _clamp01(v);
+  const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; }
+  else if (h < 120) { r = x; g = c; }
+  else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; }
+  else if (h < 300) { r = x; b = c; }
+  else { r = c; b = x; }
+  return _rgb2hex(_clamp01(r + m), _clamp01(g + m), _clamp01(b + m));
+}
+function _hex2hsv(hex) {
+  const rgb = _hex2rgb(hex), max = Math.max(...rgb), min = Math.min(...rgb), d = max - min;
+  let h = 0;
+  if (d) {
+    const [r, g, b] = rgb;
+    if (max === r) h = 60 * (((g - b) / d) % 6);
+    else if (max === g) h = 60 * ((b - r) / d + 2);
+    else h = 60 * ((r - g) / d + 4);
+  }
+  if (h < 0) h += 360;
+  return { h, s: max ? d / max : 0, v: max };
+}
+const SYSPAL_END = 1;
+
 /* ================= 主题与动态色板 ================= */
 const PALETTES = [
   { key: 'violet', name: '紫罗兰', dot: '#6750A4' },
   { key: 'ocean',  name: '海洋',   dot: '#0061A4' },
   { key: 'forest', name: '森林',   dot: '#006E1C' },
   { key: 'sunset', name: '落日',   dot: '#98490B' },
+  { key: 'crimson', name: '绯红', dot: '#9D3C51' },
+  { key: 'brick', name: '砖橙', dot: '#A13C2F' },
+  { key: 'rose', name: '玫粉', dot: '#993F76' },
+  { key: 'magenta', name: '品红', dot: '#7F4597' },
+  { key: 'orchid', name: '兰紫', dot: '#895084' },
+  { key: 'indigo', name: '靛蓝', dot: '#4A5BB6' },
+  { key: 'azure', name: '天蓝', dot: '#006F8E' },
+  { key: 'cerulean', name: '湖蓝', dot: '#007B8B' },
+  { key: 'teal', name: '青碧', dot: '#006A6A' },
+  { key: 'jade', name: '竹青', dot: '#007359' },
+  { key: 'lime', name: '青柠', dot: '#577300' },
+  { key: 'sprout', name: '嫩芽', dot: '#716E00' },
+  { key: 'lemon', name: '柠黄', dot: '#816800' },
+  { key: 'gold', name: '鎏金', dot: '#845800' },
+  { key: 'sand', name: '暖沙', dot: '#806449' },
+  { key: 'neutral', name: '中性灰', dot: '#5B626E' },
 ];
+
+/* ================= 系统强调色：按钮触发（读取 → 生成 → 注入 → 记住） =================
+   带 data-sys-accent 的圆钮（抽屉「动态取色」区 #sysAccentBtn 与页脚色板行各一个；widget / md 页没有，
+   $$() 返回空数组不报错）。读不到就什么都不做并提示，读到了就用 sysBuildPalette() 现算整套令牌注入
+   <style id="sys-palette">。读到的颜色不再往色板行追加圆点，而是涂在按钮自己身上（paintSwatch + .swatch），
+   点任意静态色板圆点会让 data-palette 变走，系统规则自然失效 —— 退出不需要额外代码。 */
+const SYS_FIXED_ACCENTS = ['#0078D4', '#007AFF', '#0A84FF', '#0060DF']; /* 部分浏览器不给真值时返回的固定默认蓝 */
+function readAccentColor() {
+  try {
+    const probe = css => {
+      const e = document.createElement('i');
+      e.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;' + css;
+      document.documentElement.appendChild(e);
+      const v = getComputedStyle(e).color;
+      e.remove();
+      return v;
+    };
+    const val = probe('color:AccentColor'), base = probe('');   /* base = 不设色时的继承值，用来判断关键字是否被支持 */
+    if (!val || val === base || !/^rgba?\(/.test(val)) return '';
+    const m = val.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    return m ? _rgb2hex(+m[1] / 255, +m[2] / 255, +m[3] / 255) : '';
+  } catch (e) { return ''; }
+}
+function isFixedAccent(hex) {
+  const a = _hex2rgb(hex).map(v => Math.round(v * 255));
+  return SYS_FIXED_ACCENTS.some(f => {
+    const b = _hex2rgb(f).map(v => Math.round(v * 255));
+    return Math.abs(a[0] - b[0]) <= 3 && Math.abs(a[1] - b[1]) <= 3 && Math.abs(a[2] - b[2]) <= 3;
+  });
+}
+const DYN_NAMES = { system: '系统强调色', custom: '自定义' };   /* 两套动态色板不进 PALETTES，名字单独给 */
+function paletteName(key) {
+  const p = PALETTES.find(x => x.key === key);
+  return p ? p.name : (DYN_NAMES[key] || PALETTES[0].name);
+}
+function injectDynPalette(key, hex, pal) {
+  const p = pal || sysBuildPalette(hex);   /* pal 可选：调色盘拖动时把它一并传进来，省掉重复计算 */
+  if (!p) return false;
+  const id = key === 'system' ? 'sys-palette' : 'dyn-palette-' + key;   /* system 沿用旧 id，其余每槽一个 style */
+  let st = document.getElementById(id);
+  if (!st) { st = document.createElement('style'); st.id = id; document.head.appendChild(st); }
+  st.textContent = sysCssText(p, key);
+  return true;
+}
+/* 动态色不往色板行加圆点（PALETTES 恒 20 项），颜色直接涂在入口圆钮本身：
+   .swatch 让钮底色 = 该色，图标色按对比度在黑白里取高者，保证 30px 上可读；
+   data-palette 命中 custom / system 时给对应钮套 .active 选中圈。 */
+function paintSwatch(btn, hex) {
+  if (!btn) return;
+  if (hex) {
+    btn.classList.add('swatch');
+    btn.style.setProperty('--c', hex);
+    btn.style.setProperty('--on-c', _contrast(hex, '#FFFFFF') >= _contrast(hex, '#000000') ? '#FFFFFF' : '#000000');
+  } else {
+    btn.classList.remove('swatch');
+    btn.style.removeProperty('--c');
+    btn.style.removeProperty('--on-c');
+  }
+}
+function syncDynSwatches() {
+  let custom = '', accent = '';
+  try { custom = localStorage.getItem('prify-custom-color') || ''; accent = localStorage.getItem('prify-system-accent') || ''; } catch (e) {}
+  const key = root.dataset.palette;
+  $$('[data-color-pick]').forEach(b => { paintSwatch(b, custom); b.classList.toggle('active', key === 'custom'); });
+  $$('[data-sys-accent]').forEach(b => { paintSwatch(b, accent); b.classList.toggle('active', key === 'system'); });
+}
+function applySystemAccent(fromBtn) {
+  const hex = readAccentColor();
+  if (!hex) { if (fromBtn) snackbar('读不到系统强调色，浏览器未提供（保持当前色板）'); return false; }
+  if (!sysBuildPalette(hex)) { if (fromBtn) snackbar('系统色过于中性（近黑/白/灰），无法生成色板'); return false; }
+  injectDynPalette('system', hex);
+  try { localStorage.setItem('prify-system-accent', hex); } catch (e) {}
+  applyPalette('system');
+  if (fromBtn) snackbar(`读到 ${hex}${isFixedAccent(hex) ? '（可能是浏览器固定默认色）' : ''}，已生成系统色板`);
+  return true;
+}
+/* 打开页面时：读过系统色就直接复用（数据在 localStorage，不重新读系统），否则按需回退 */
+try {
+  const savedAccent = localStorage.getItem('prify-system-accent');
+  const sp = savedAccent && sysBuildPalette(savedAccent);
+  if (sp) injectDynPalette('system', savedAccent, sp);
+  else if (root.dataset.palette === 'system') root.dataset.palette = 'violet';
+} catch (e) {}
+$$('[data-sys-accent]').forEach(b => b.onclick = () => applySystemAccent(true));
+
+/* ================= 调色盘：一个基础色 → 整套令牌（SV 取色面 + 色相条 + 实时预览） =================
+   带 data-color-pick 的圆钮（抽屉、页脚各一个）打开居中弹窗 #pickerWrap。取色区是一个二维面：
+   横轴饱和度、纵轴明度，底色为当前色相；色相另配一条彩虹滑杆。三者用 HSV 合成基础色 hex，
+   再复用 sysBuildPalette() 现算整套令牌注入到 custom 槽。拖动只注入 + 切 data-palette 做预览，
+   不写 localStorage；取消 / Esc / 点遮罩还原打开前的色板，应用才把颜色和色板落盘。
+   应用后色板行不新增圆点：颜色改涂在调色盘入口圆钮自己身上（syncDynSwatches）。
+   widget / md 页没有入口，$$() 返回空数组、getElementById 返回 null，这里全部判空不报错。 */
+const CUSTOM_KEY = 'custom';
+let pickHue = 262, pickSat = 0.7, pickVal = 0.7;   /* HSV 状态：色相 0-360、饱和度 / 明度 0-1 */
+let pickPrev = null;                                /* 打开前正在用的色板 key，取消时还原 */
+let pickDrag = false;                               /* SV 取色面是否正在拖动 */
+const pickEl = id => document.getElementById(id);
+const pickClamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+function pickHex() { return _hsv2hex(pickHue, pickSat, pickVal); }
+function pickSetFromHex(hex) {
+  const c = _hex2hsv(hex);
+  if (!c || !isFinite(c.h)) return false;
+  pickHue = c.h; pickSat = c.s; pickVal = c.v;
+  return true;
+}
+/* 把当前 HSV 同步到取色界面。continuous = true 是拖动 / 色相条 input 的高频调用：
+   只更新弹窗内部（取色面、色相条、hex、色块），完全不碰 data-palette 与页面样式，
+   页面零重绘，所以拖动顺滑。松手 / hex / 随机 / 打开等非连续场景才整页换色一次。
+   颜色太接近黑 / 白 / 灰（sysBuildPalette 返回 null）时禁用「应用」并提示。 */
+function pickSyncUI(continuous) {
+  const hex = pickHex(), pal = sysBuildPalette(hex), ok = !!pal;
+  if (pickEl('pickSV')) pickEl('pickSV').style.setProperty('--pick-h', pickHue);
+  if (pickEl('pickCursor')) {
+    pickEl('pickCursor').style.left = (pickSat * 100) + '%';
+    pickEl('pickCursor').style.top = ((1 - pickVal) * 100) + '%';
+  }
+  if (pickEl('pickHue')) pickEl('pickHue').value = pickHue;
+  if (pickEl('pickHex') && document.activeElement !== pickEl('pickHex')) pickEl('pickHex').value = hex;
+  if (pickEl('pickSwatch')) pickEl('pickSwatch').style.background = hex;
+  if (pickEl('pickWarn')) pickEl('pickWarn').style.display = ok ? 'none' : 'block';
+  $$('.pick-ok').forEach(b => b.disabled = !ok);
+  if (continuous) return;   /* 拖动中：只在弹窗内预览，不重绘页面 */
+  if (ok) {
+    injectDynPalette(CUSTOM_KEY, hex, pal);   /* 传入已算好的 pal，省掉重复计算 */
+    root.dataset.palette = CUSTOM_KEY;
+    syncPaletteUI();
+    $$('[data-color-pick]').forEach(b => paintSwatch(b, hex));   /* 预览期间入口圆钮跟着变（未落盘，取消会回涂存档色） */
+  } else if (root.dataset.palette === CUSTOM_KEY) {
+    root.dataset.palette = pickPrev || 'violet';   /* 近灰退回上一套 */
+    syncPaletteUI();
+  }
+}
+function pickOpen() {
+  setDrawer(false); setStart(false);   /* 收起抽屉 / 开始菜单，避免弹窗盖在上面 */
+  pickPrev = root.dataset.palette || 'violet';
+  let hex = '';
+  try { hex = localStorage.getItem('prify-custom-color') || ''; } catch (e) {}
+  if (!hex && pickPrev === 'system') { try { hex = localStorage.getItem('prify-system-accent') || ''; } catch (e) {} }   /* system 不进 PALETTES，单独取 */
+  if (!hex) hex = (PALETTES.find(p => p.key === pickPrev) || PALETTES[0]).dot;
+  pickSetFromHex(hex);
+  pickSyncUI(false);
+  if (pickEl('pickerWrap')) pickEl('pickerWrap').classList.add('open');
+}
+function pickClose(restore) {
+  if (restore !== false) {
+    /* 还原预览：若本来就在 custom 槽，把样式重注入回存档色（预览把该槽改过了） */
+    if (pickPrev === CUSTOM_KEY) { try { const s = localStorage.getItem('prify-custom-color'); if (s) injectDynPalette(CUSTOM_KEY, s); } catch (e) {} }
+    if (pickPrev) { root.dataset.palette = pickPrev; syncPaletteUI(); }
+  }
+  if (pickEl('pickerWrap')) pickEl('pickerWrap').classList.remove('open');
+}
+function pickApply() {
+  const hex = pickHex();
+  if (!sysBuildPalette(hex)) return;
+  injectDynPalette(CUSTOM_KEY, hex);
+  try { localStorage.setItem('prify-custom-color', hex); } catch (e) {}
+  applyPalette(CUSTOM_KEY);   /* 内部走 syncPaletteUI → syncDynSwatches，把颜色涂到调色盘圆钮上，不加圆点 */
+  snackbar(`已应用自定义色板 ${hex}`);
+  pickClose(false);
+}
+function pickRandom() {
+  pickHue = Math.round(Math.random() * 360);
+  pickSat = 0.35 + Math.random() * 0.6;
+  pickVal = 0.45 + Math.random() * 0.45;
+  pickSyncUI(false);
+}
+/* SV 取色面：按住拖动，横轴 = 饱和度，纵轴 = 明度（顶部 1、底部 0）。
+   拖动用 requestAnimationFrame 合并，一帧最多算一次；松手时按最后坐标做一次完整同步。 */
+let pickPoint = null, pickRAF = 0;
+function pickApplyPoint(continuous) {
+  const box = pickEl('pickSV');
+  if (!box || !pickPoint) return;
+  const r = box.getBoundingClientRect();
+  pickSat = pickClamp01((pickPoint.x - r.left) / r.width);
+  pickVal = 1 - pickClamp01((pickPoint.y - r.top) / r.height);
+  pickSyncUI(continuous);
+}
+function pickSchedule(x, y) {
+  pickPoint = { x, y };
+  if (pickRAF) return;
+  pickRAF = requestAnimationFrame(() => { pickRAF = 0; pickApplyPoint(true); });
+}
+if (pickEl('pickSV')) {
+  const box = pickEl('pickSV');
+  box.addEventListener('pointerdown', e => {
+    pickDrag = true;
+    try { box.setPointerCapture(e.pointerId); } catch (_) {}
+    pickSchedule(e.clientX, e.clientY); e.preventDefault();
+  });
+  box.addEventListener('pointermove', e => { if (pickDrag) pickSchedule(e.clientX, e.clientY); });
+  const pickEnd = e => {
+    if (!pickDrag) return;
+    pickDrag = false;
+    if (pickRAF) { cancelAnimationFrame(pickRAF); pickRAF = 0; }
+    if (e && typeof e.clientX === 'number') pickPoint = { x: e.clientX, y: e.clientY };   /* 用松手坐标收尾（可能没有中间 move） */
+    pickApplyPoint(false);   /* 冲掉待处理帧，按最后坐标补一次完整同步（页脚色板行、入口圆钮等） */
+  };
+  box.addEventListener('pointerup', pickEnd);
+  box.addEventListener('pointercancel', pickEnd);
+}
+/* 色相条：原生 range 只换皮，input 高频走轻量、change 收尾完整同步 */
+if (pickEl('pickHue')) {
+  pickEl('pickHue').addEventListener('input', e => { pickHue = +e.target.value; pickSyncUI(true); });
+  pickEl('pickHue').addEventListener('change', () => pickSyncUI(false));
+}
+/* 打开页面时：存过自定义色就直接注入 custom 槽（不加圆点，颜色由入口圆钮显示），否则按需回退 */
+try {
+  const savedPick = localStorage.getItem('prify-custom-color');
+  const p = savedPick && sysBuildPalette(savedPick);
+  if (p) injectDynPalette(CUSTOM_KEY, savedPick, p);
+  else if (root.dataset.palette === CUSTOM_KEY) root.dataset.palette = 'violet';
+} catch (e) {}
+$$('[data-color-pick]').forEach(b => b.onclick = pickOpen);
+if (pickEl('pickBtnApply')) pickEl('pickBtnApply').onclick = pickApply;
+if (pickEl('pickBtnCancel')) pickEl('pickBtnCancel').onclick = pickClose;
+if (pickEl('pickBtnRandom')) pickEl('pickBtnRandom').onclick = pickRandom;
+/* hex 输入框：合法 #RRGGBB 就同步，非法就忽略（下次同步会还原显示） */
+if (pickEl('pickHex')) {
+  const applyHex = () => {
+    const v = pickEl('pickHex').value.trim();
+    if (/^#?[0-9a-fA-F]{6}$/.test(v)) pickSetFromHex(v[0] === '#' ? v : '#' + v);
+    pickSyncUI(false);
+  };
+  pickEl('pickHex').addEventListener('change', applyHex);
+  pickEl('pickHex').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyHex(); } });
+}
+if (pickEl('pickerWrap')) pickEl('pickerWrap').onclick = e => { if (e.target === pickEl('pickerWrap')) pickClose(); };
+
 function applyTheme(t) { root.dataset.theme = t; localStorage.setItem('prify-theme', t); syncThemeUI(); }
 function applyPalette(p) { root.dataset.palette = p; localStorage.setItem('prify-palette', p); syncPaletteUI(); }
 function toggleTheme() {
@@ -96,7 +474,7 @@ function syncThemeUI() {
   const dark = root.dataset.theme === 'dark';
   $('#themeIcon').innerHTML = `<use href="#i-${dark ? 'sun' : 'moon'}"/>`;
   $('#dockTheme').innerHTML = `<svg class="icon"><use href="#i-${dark ? 'sun' : 'moon'}"/></svg>`;
-  $('#footTheme').textContent = `${dark ? '深色' : '浅色'} · ${PALETTES.find(p => p.key === root.dataset.palette).name}`;
+  $('#footTheme').textContent = `${dark ? '深色' : '浅色'} · ${paletteName(root.dataset.palette)}`;
   syncMeta();
 }
 function buildPdots(container) {
@@ -116,9 +494,11 @@ function renderPaletteBar() {
     ['Tertiary','--tertiary'],['T-Container','--tertiary-container'],['Error','--error'],['Surface','--surface']];
   $('#paletteBar').innerHTML = items.map(([n, v]) => `<span class="swatch"><i style="background:var(${v})"></i>${n}</span>`).join('');
 }
-function syncPaletteUI() {
+function syncPaletteDots() {
   $$('.pdot').forEach(d => d.classList.toggle('active', d.dataset.p === root.dataset.palette));
-  syncThemeUI(); renderPaletteBar();
+}
+function syncPaletteUI() {
+  syncPaletteDots(); syncThemeUI(); renderPaletteBar(); syncDynSwatches();
 }
 /* 初始化（属性已由 head 内联脚本预设，这里只同步 UI，不会产生视觉跳变） */
 syncThemeUI(); syncPaletteUI();
@@ -217,7 +597,7 @@ $('#dlgOk').onclick = () => (dlgOkHandler || subscribeFromDialog)();
 /* ================= 全局快捷键 ================= */
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setStart(true); }
-  if (e.key === 'Escape') { setStart(false); setDialog(false); setDrawer(false); }
+  if (e.key === 'Escape') { setStart(false); setDialog(false); setDrawer(false); pickClose(); }
 });
 
 /* ================= Tabs：滑动指示条 ================= */

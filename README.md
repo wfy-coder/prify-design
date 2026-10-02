@@ -140,7 +140,11 @@ python3 -m http.server 8080
 
 ### 5.2 主题与色板
 
-- `html[data-theme]` 切深浅色（`light` / `dark`），`html[data-palette]` 切 4 色板（violet / ocean / forest / sunset）
+- `html[data-theme]` 切深浅色（`light` / `dark`），`html[data-palette]` 切 20 色板：`violet` 紫罗兰 / `ocean` 海洋 / `forest` 森林 / `sunset` 落日，外加 16 套扩展 `crimson` 绯红、`brick` 砖橙、`rose` 玫粉、`magenta` 品红、`orchid` 兰紫、`indigo` 靛蓝、`azure` 天蓝、`cerulean` 湖蓝、`teal` 青碧、`jade` 竹青、`lime` 青柠、`sprout` 嫩芽、`lemon` 柠黄、`gold` 鎏金、`sand` 暖沙、`neutral` 中性灰
+- 再加色板：`prify.css` 色板区补浅色 + 深色两条规则，`prify.js` 的 `PALETTES` 加一行 `{ key, name, dot }`，页脚与抽屉的圆点自动出现
+- 系统强调色：抽屉「动态取色」区与页脚色板行最前面的 30×30 圆钮，`.icon-btn.tonal` + `#i-devices` 电脑图标，悬停出 `data-tip` 气泡，带 `data-sys-accent`；按下才读浏览器 `AccentColor` 系统色（探针 + 对照两个隐藏元素，判断关键字是否真被支持），把读到的颜色按紫罗兰 19 个令牌模板现算成浅色 + 深色整套令牌注入 `<style id="sys-palette">`，读到的色**直接涂在这个圆钮自己身上**（`.swatch` + `--c`/`--on-c`，图标色按对比度取黑或白），色板圆点区**不新增圆点**，色值存 `prify-system-accent` 下次直接复用；当前 `data-palette="system"` 时该钮带选中圈，点任意静态色板圆点即退出（`data-palette` 一变，系统规则就不匹配）。读不到、或色过于中性（近黑/白/灰）只提示不改色
+- 调色盘：抽屉与页脚「动态取色」行的调色盘圆钮（`.icon-btn.tonal` + `#i-palette`，带 `data-color-pick`）打开居中弹窗 `#pickerWrap`（打开时自动收起抽屉 / 开始菜单）；取色区是一个二维面（横轴饱和度、纵轴明度，底色随色相），上方白色圆环光标可按住拖动，下面一条彩虹色相滑杆（原生 range 换皮成白色圆角滑块），底部是圆形色块 + 可编辑的十六进制输入 + 随机按钮。三者用 HSV 合成 `_hsv2hex()` 基础色，复用 `sysBuildPalette()` 现算整套令牌。**拖动时只在弹窗内预览**（光标 / 色块实时变，弹窗外的页面不重绘，避免卡顿），松手 / 改 hex / 随机时才整页换色一次；注入独立 `custom` 槽（`html[data-palette="custom"]`），取消 / Esc / 点遮罩还原打开前的色板，点「应用」才写 `prify-custom-color` 与 `prify-palette`，**色板行同样不新增圆点**，颜色改涂在调色盘圆钮自己身上（`paintSwatch`，`data-palette="custom"` 时它带选中圈，和 i-devices 钮上的系统色互不覆盖）；颜色太接近黑 / 白 / 灰（算不出整套）会禁用应用并提示
+- 浏览器限制（按钮不会坏，但不一定真的"跟了系统"）：`AccentColor` 需要较新版本，Chrome 150+ 普通标签页为防指纹只返回固定默认蓝（会提示「可能是浏览器固定默认色」），Safari 长期返回常量，真正拿到系统真值的主要是 Firefox（Windows 除外）与已安装的 PWA
 - 存 localStorage（`prify-theme` / `prify-palette`），下次访问保持
 - 顶部主题按钮、Dock 深浅按钮、色板点都会联动
 

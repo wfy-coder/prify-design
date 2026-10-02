@@ -51,6 +51,40 @@ html[data-palette="forest"][data-theme="dark"]{--primary:#7CDA86;--on-primary:#0
 html[data-palette="sunset"]{--primary:#98490B;--primary-container:#FFDBC8;--on-primary-container:#331200;--secondary:#77574A;--secondary-container:#F7DFCA;--on-secondary-container:#2C170B;--tertiary:#006A6A;--tertiary-container:#9CF1F0;--on-tertiary-container:#002020;--primary-glow:rgba(152,73,11,.38)}
 html[data-palette="sunset"][data-theme="dark"]{--primary:#FFB68B;--on-primary:#4E2500;--primary-container:#6E3900;--on-primary-container:#FFDBC8;--secondary:#E7BEAD;--secondary-container:#5D4032;--on-secondary-container:#F7DFCA;--tertiary:#80D4D3;--tertiary-container:#004F4F;--on-tertiary-container:#9CF1F0;--primary-glow:rgba(255,182,139,.42)}
 
+/* ---------- 1b. 扩展色板：16 套（violet / ocean / forest / sunset 之外），与上方同样一套浅色 + 深色令牌 ---------- */
+html[data-palette="crimson"]{--primary:#9D3C51;--primary-container:#FFDAD9;--on-primary-container:#41001C;--secondary:#725758;--secondary-container:#FBDADA;--on-secondary-container:#2A1518;--tertiary:#755C38;--tertiary-container:#F7E0C3;--on-tertiary-container:#2B1900;--primary-glow:rgba(157,60,81,.38)}
+html[data-palette="crimson"][data-theme="dark"]{--primary:#FFB0BB;--on-primary:#64002D;--primary-container:#812041;--on-primary-container:#FFD9DB;--secondary:#DFBEBF;--secondary-container:#594043;--on-secondary-container:#FBDADB;--tertiary:#E5C39A;--tertiary-container:#5D4323;--on-tertiary-container:#F9DFC4;--primary-glow:rgba(255,176,187,.42)}
+html[data-palette="brick"]{--primary:#A13C2F;--primary-container:#FFDBCF;--on-primary-container:#430008;--secondary:#735851;--secondary-container:#FBDBD1;--on-secondary-container:#2B1512;--tertiary:#6C6035;--tertiary-container:#EEE4C0;--on-tertiary-container:#251D00;--primary-glow:rgba(161,60,47,.38)}
+html[data-palette="brick"][data-theme="dark"]{--primary:#FFB3A6;--on-primary:#67000F;--primary-container:#861D20;--on-primary-container:#FFDBD1;--secondary:#E0BFB6;--secondary-container:#5A413C;--on-secondary-container:#FCDBD2;--tertiary:#DAC995;--tertiary-container:#55481E;--on-tertiary-container:#F1E3C0;--primary-glow:rgba(255,179,166,.42)}
+html[data-palette="rose"]{--primary:#993F76;--primary-container:#FFE1EC;--on-primary-container:#3E0033;--secondary:#735965;--secondary-container:#FFE0EB;--on-secondary-container:#2A1621;--tertiary:#815942;--tertiary-container:#FFE4D6;--on-tertiary-container:#331503;--primary-glow:rgba(153,63,118,.38)}
+html[data-palette="rose"][data-theme="dark"]{--primary:#FEB4DD;--on-primary:#5F034E;--primary-container:#7B2465;--on-primary-container:#FFE0EE;--secondary:#E2C3D0;--secondary-container:#59424E;--on-secondary-container:#FFE0ED;--tertiary:#F6C1A9;--tertiary-container:#67402D;--on-tertiary-container:#FFE4D8;--primary-glow:rgba(254,180,221,.42)}
+html[data-palette="magenta"]{--primary:#7F4597;--primary-container:#F5D9F7;--on-primary-container:#30004C;--secondary:#69596C;--secondary-container:#F1DBF2;--on-secondary-container:#231728;--tertiary:#815252;--tertiary-container:#FFDAD9;--on-tertiary-container:#341012;--primary-glow:rgba(127,69,151,.38)}
+html[data-palette="magenta"][data-theme="dark"]{--primary:#E2B6F6;--on-primary:#48136A;--primary-container:#612E82;--on-primary-container:#F3DAF9;--secondary:#D3C0D8;--secondary-container:#4F4255;--on-secondary-container:#EFDCF4;--tertiary:#F4B8BA;--tertiary-container:#663A3D;--on-tertiary-container:#FFD9DB;--primary-glow:rgba(226,182,246,.42)}
+html[data-palette="orchid"]{--primary:#895084;--primary-container:#FFE9F7;--on-primary-container:#390341;--secondary:#705F6B;--secondary-container:#FEE8F6;--on-secondary-container:#261A25;--tertiary:#805C53;--tertiary-container:#FFEBE6;--on-tertiary-container:#311711;--primary-glow:rgba(137,80,132,.38)}
+html[data-palette="orchid"][data-theme="dark"]{--primary:#F1C2EC;--on-primary:#511F57;--primary-container:#6B376F;--on-primary-container:#FFE8F9;--secondary:#DFCBDA;--secondary-container:#554753;--on-secondary-container:#FDE8F7;--tertiary:#F6C8BF;--tertiary-container:#65443D;--on-tertiary-container:#FFEBE7;--primary-glow:rgba(241,194,236,.42)}
+html[data-palette="indigo"]{--primary:#4A5BB6;--primary-container:#E6E8FF;--on-primary-container:#000A69;--secondary:#5C6079;--secondary-container:#E5E7FF;--on-secondary-container:#171C2F;--tertiary:#7C5571;--tertiary-container:#FFDFF6;--on-tertiary-container:#301229;--primary-glow:rgba(74,91,182,.38)}
+html[data-palette="indigo"][data-theme="dark"]{--primary:#BDCCFF;--on-primary:#0F2A80;--primary-container:#28449B;--on-primary-container:#E4E9FF;--secondary:#C5CBE8;--secondary-container:#43495F;--on-secondary-container:#E4E8FF;--tertiary:#EDBEE3;--tertiary-container:#603D5A;--on-tertiary-container:#FFDEFA;--primary-glow:rgba(189,204,255,.42)}
+html[data-palette="azure"]{--primary:#006F8E;--primary-container:#D4EFFF;--on-primary-container:#00262F;--secondary:#496776;--secondary-container:#D2EEFF;--on-secondary-container:#02212C;--tertiary:#625C8A;--tertiary-container:#E9E7FF;--on-tertiary-container:#1F183B;--primary-glow:rgba(0,111,142,.38)}
+html[data-palette="azure"][data-theme="dark"]{--primary:#82DCFF;--on-primary:#003D4A;--primary-container:#005669;--on-primary-container:#D1F0FF;--secondary:#B0D3E5;--secondary-container:#314F5B;--on-secondary-container:#D0EFFF;--tertiary:#CAC8FF;--tertiary-container:#484570;--on-tertiary-container:#E7E8FF;--primary-glow:rgba(130,220,255,.42)}
+html[data-palette="cerulean"]{--primary:#007B8B;--primary-container:#F8FDFF;--on-primary-container:#002A2E;--secondary:#4F717A;--secondary-container:#F7FDFF;--on-secondary-container:#03262B;--tertiary:#606994;--tertiary-container:#FBFCFF;--on-tertiary-container:#191E3F;--primary-glow:rgba(0,123,139,.38)}
+html[data-palette="cerulean"][data-theme="dark"]{--primary:#96EFFF;--on-primary:#004449;--primary-container:#005F67;--on-primary-container:#F8FEFF;--secondary:#BEE5EF;--secondary-container:#36575D;--on-secondary-container:#F6FDFF;--tertiary:#D4DEFF;--tertiary-container:#444F77;--on-tertiary-container:#FBFCFF;--primary-glow:rgba(150,239,255,.42)}
+html[data-palette="teal"]{--primary:#006A6A;--primary-container:#ACE4E9;--on-primary-container:#002321;--secondary:#3C6164;--secondary-container:#B7E0E5;--on-secondary-container:#001F1F;--tertiary:#425B84;--tertiary-container:#C2DAFD;--on-tertiary-container:#071A39;--primary-glow:rgba(0,106,106,.38)}
+html[data-palette="teal"][data-theme="dark"]{--primary:#51D5D5;--on-primary:#003936;--primary-container:#00514E;--on-primary-container:#ACE4E7;--secondary:#9CC6C8;--secondary-container:#274A4A;--on-secondary-container:#B7E1E3;--tertiary:#9EC1F2;--tertiary-container:#2A456A;--on-tertiary-container:#C0DBFD;--primary-glow:rgba(81,213,213,.42)}
+html[data-palette="jade"]{--primary:#007359;--primary-container:#BAF2E5;--on-primary-container:#002718;--secondary:#43685E;--secondary-container:#C4EEE4;--on-secondary-container:#012319;--tertiary:#306785;--tertiary-container:#C6EAFF;--on-tertiary-container:#002131;--primary-glow:rgba(0,115,89,.38)}
+html[data-palette="jade"][data-theme="dark"]{--primary:#6FE2BD;--on-primary:#003F2A;--primary-container:#00593E;--on-primary-container:#BBF2E2;--secondary:#A9D2C6;--secondary-container:#2F4F45;--on-secondary-container:#C5EEE2;--tertiary:#91D4F6;--tertiary-container:#115069;--on-tertiary-container:#C3EBFF;--primary-glow:rgba(111,226,189,.42)}
+html[data-palette="lime"]{--primary:#577300;--primary-container:#E1F9D4;--on-primary-container:#202500;--secondary:#5D6A51;--secondary-container:#E4F6DA;--on-secondary-container:#1A220B;--tertiary:#2D736F;--tertiary-container:#C9FCF7;--on-tertiary-container:#002624;--primary-glow:rgba(87,115,0,.38)}
+html[data-palette="lime"][data-theme="dark"]{--primary:#C3E191;--on-primary:#343C00;--primary-container:#495600;--on-primary-container:#E4F8D2;--secondary:#C9D8BB;--secondary-container:#475039;--on-secondary-container:#E6F6D8;--tertiary:#99E5DC;--tertiary-container:#115953;--on-tertiary-container:#C9FCF4;--primary-glow:rgba(195,225,145,.42)}
+html[data-palette="sprout"]{--primary:#716E00;--primary-container:#F3FBD6;--on-primary-container:#292300;--secondary:#676A52;--secondary-container:#F3FADD;--on-secondary-container:#21210B;--tertiary:#3F7565;--tertiary-container:#DEFFF3;--on-tertiary-container:#00281E;--primary-glow:rgba(113,110,0,.38)}
+html[data-palette="sprout"][data-theme="dark"]{--primary:#DFDF91;--on-primary:#413A00;--primary-container:#5B5200;--on-primary-container:#F6FAD4;--secondary:#D7DBBE;--secondary-container:#505039;--on-secondary-container:#F5F9DC;--tertiary:#ACE9D2;--tertiary-container:#285A4A;--on-tertiary-container:#DFFFF1;--primary-glow:rgba(223,223,145,.42)}
+html[data-palette="lemon"]{--primary:#816800;--primary-container:#FEF8CE;--on-primary-container:#2F2100;--secondary:#6E684D;--secondary-container:#FBF7D7;--on-secondary-container:#261F07;--tertiary:#457558;--tertiary-container:#E2FFEB;--on-tertiary-container:#002915;--primary-glow:rgba(129,104,0,.38)}
+html[data-palette="lemon"][data-theme="dark"]{--primary:#F3D783;--on-primary:#4A3600;--primary-container:#664D00;--on-primary-container:#FFF7D3;--secondary:#DFD8B8;--secondary-container:#564E35;--on-secondary-container:#FDF6D7;--tertiary:#B3E9C2;--tertiary-container:#305A3D;--on-tertiary-container:#E3FFE8;--primary-glow:rgba(243,215,131,.42)}
+html[data-palette="gold"]{--primary:#845800;--primary-container:#F5E2BB;--on-primary-container:#301A00;--secondary:#6B5D45;--secondary-container:#F1E2C4;--on-secondary-container:#271905;--tertiary:#4B6A44;--tertiary-container:#D3EDCB;--on-tertiary-container:#0B2405;--primary-glow:rgba(132,88,0,.38)}
+html[data-palette="gold"][data-theme="dark"]{--primary:#F3BF75;--on-primary:#4B2C00;--primary-container:#694000;--on-primary-container:#F8E1BC;--secondary:#D6C5A9;--secondary-container:#544530;--on-secondary-container:#F2E1C5;--tertiary:#B3D6A4;--tertiary-container:#38512B;--on-tertiary-container:#D6ECC9;--primary-glow:rgba(243,191,117,.42)}
+html[data-palette="sand"]{--primary:#806449;--primary-container:#FEF5E8;--on-primary-container:#371B02;--secondary:#6D665F;--secondary-container:#FCF4EB;--on-secondary-container:#241E18;--tertiary:#646C5D;--tertiary-container:#F2F9EC;--on-tertiary-container:#1D2318;--primary-glow:rgba(128,100,73,.38)}
+html[data-palette="sand"][data-theme="dark"]{--primary:#ECD4BF;--on-primary:#4F311A;--primary-container:#684A31;--on-primary-container:#FFF4E9;--secondary:#DED6CD;--secondary-container:#544D46;--on-secondary-container:#FCF4EB;--tertiary:#D5DDCA;--tertiary-container:#4C5244;--on-tertiary-container:#F3F9EB;--primary-glow:rgba(236,212,191,.42)}
+html[data-palette="neutral"]{--primary:#5B626E;--primary-container:#E2E4E9;--on-primary-container:#18202A;--secondary:#5E5F63;--secondary-container:#E2E3E7;--on-secondary-container:#1B1C1F;--tertiary:#635F64;--tertiary-container:#E6E2E7;--on-tertiary-container:#201C20;--primary-glow:rgba(91,98,110,.38)}
+html[data-palette="neutral"][data-theme="dark"]{--primary:#C3C9D3;--on-primary:#2C353F;--primary-container:#434B56;--on-primary-container:#E1E4E9;--secondary:#C5C7CB;--secondary-container:#46484B;--on-secondary-container:#E1E3E7;--tertiary:#CDC7CE;--tertiary-container:#4B474C;--on-tertiary-container:#E6E2E7;--primary-glow:rgba(195,201,211,.42)}
+
 /* ---------- 2. 动画关键帧库 ---------- */
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
@@ -671,11 +705,16 @@ footer{border-top:1px solid var(--outline-var);background:var(--surface-c-low);p
 .palette-bar .swatch:nth-child(7){animation-delay:.3s}
 .palette-bar .swatch i{width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,.08);transition:transform .3s var(--spring)}
 .palette-bar .swatch:hover i{transform:scale(1.25) rotate(8deg)}
-.pdots{display:flex;gap:10px;align-items:center}
+.pdots{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .pdot{width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;background:var(--c);outline:3px solid transparent;outline-offset:3px;transition:outline-color .25s,transform .3s var(--spring)}
 .pdot:hover{transform:scale(1.18) rotate(10deg)}
 .pdot.active{outline-color:var(--on-surface)}
 .pdot:active{transform:scale(.85)}
+/* 动态色不新增圆点：颜色涂在入口圆钮本身（prify.js paintSwatch 设 --c / --on-c），
+   当前正用着 custom / system 时给该钮套同一套选中圈 */
+.icon-btn.tonal.swatch{background:var(--c);color:var(--on-c);outline:3px solid transparent;outline-offset:3px;transition:background .2s,color .2s,transform .15s var(--ease-emph),box-shadow .3s,outline-color .25s}
+.icon-btn.tonal.swatch:hover{filter:brightness(1.07)}
+.icon-btn.tonal.swatch.active{outline-color:var(--on-surface)}
 .foot-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;font-size:12.5px;color:var(--on-surface-var)}
 
 /* ---------- 18. 任务栏 Dock（邻居放大 + 升起入场） ---------- */
@@ -784,6 +823,33 @@ body.ready .dock{opacity:1;transform:translate(-50%,0)}
 .dialog-wrap.open .tf{animation:fadeUp .4s var(--ease) .28s both}
 .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px;opacity:0}
 .dialog-wrap.open .dialog-actions{animation:fadeUp .4s var(--ease) .34s both}
+
+/* 调色盘弹窗整体压扁：缩小图标 / 标题 / 说明与内边距（只作用于 #pickerWrap） */
+#pickerWrap .dialog{padding:18px 22px 16px}
+#pickerWrap .dialog-icon{width:38px;height:38px;margin:0 auto 8px}
+#pickerWrap .dialog-icon .icon{width:20px;height:20px}
+#pickerWrap .dialog h3{font-size:18px;margin-bottom:5px}
+#pickerWrap .dtext{margin-bottom:12px;font-size:13px}
+#pickerWrap .dialog-actions{margin-top:14px}
+
+/* ---------- 20b. 调色盘弹窗（SV 取色面 + 色相彩虹条 + 底部色块/色值/按钮） ---------- */
+.pick-sv{position:relative;width:100%;height:min(38vw,176px);min-height:140px;border-radius:var(--r-md);cursor:crosshair;touch-action:none;overflow:hidden;background:linear-gradient(to bottom,#0000,#000),linear-gradient(to right,#fff,#fff0),hsl(var(--pick-h,262) 100% 50%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.pick-cursor{position:absolute;left:70%;top:30%;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
+input.pick-hue{-webkit-appearance:none;appearance:none;width:100%;height:34px;margin-top:8px;background:transparent;cursor:pointer}
+input.pick-hue:focus-visible{outline:none}
+input.pick-hue::-webkit-slider-runnable-track{height:16px;border-radius:999px;background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+input.pick-hue::-moz-range-track{height:16px;border-radius:999px;background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+input.pick-hue::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:26px;margin-top:-5px;border:none;border-radius:6px;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.45);transition:transform .15s var(--spring)}
+input.pick-hue::-moz-range-thumb{width:10px;height:26px;border:none;border-radius:6px;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.45);transition:transform .15s var(--spring)}
+input.pick-hue:active::-webkit-slider-thumb{transform:scaleY(1.1)}
+input.pick-hue:active::-moz-range-thumb{transform:scaleY(1.1)}
+.pick-warn{display:none;font-size:12.5px;color:var(--error);margin:8px 0 0}
+.pick-foot{display:flex;align-items:center;gap:10px;margin-top:12px}
+.pick-dot{width:36px;height:36px;flex:none;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15),0 1px 4px rgba(0,0,0,.25)}
+.pick-hex{flex:1;min-width:0;height:38px;padding:0 12px;border:1px solid var(--outline);border-radius:var(--r-sm);background:transparent;color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;letter-spacing:.6px;transition:border-color .25s,box-shadow .25s}
+.pick-hex:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+#pickBtnRandom{width:38px;height:38px}
+#pickBtnRandom .icon{width:18px;height:18px}
 
 /* ---------- 21. Snackbar（弹簧入场 + 倒计时进度条） ---------- */
 .snackbar{position:fixed;right:20px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:300;display:flex;align-items:center;gap:18px;min-width:280px;max-width:min(420px,calc(100vw - 40px));padding:14px 18px 16px;border-radius:var(--r-md);background:var(--surface);color:var(--on-surface);box-shadow:var(--elev-3);font-size:14px;overflow:hidden;transform:translateY(180%);opacity:0;transition:transform .4s var(--ease-emph),opacity .3s,background .35s,color .35s;will-change:transform,opacity;contain:layout paint}
