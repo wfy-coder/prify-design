@@ -106,7 +106,7 @@
        data-tip      悬停气泡提示（纯 CSS）
        data-app      开始菜单里的应用名（点击弹 snackbar）
        data-pane     对应 .tabpane 的 id，供 Tabs 切换
-       data-ring     环形进度百分比（进入视口时由 prify.js 填充）
+       data-ring     环形进度百分比（须放在 .reveal / .stagger 容器内，进视口时由 prify.js 填充）
        data-count    数字计数目标值，data-decimals 小数位，data-suffix 后缀 -->
 <main id="top">
   <!-- ====== Hero ======
@@ -144,14 +144,15 @@
               <button class="wc-close" aria-label="关闭"></button>
             </div>
           </div>
-          <div class="desk">
+          <div class="desk reveal">
             <!-- 时钟组件：#heroClock/#heroDate 每秒刷新（prify.js tickClock） -->
             <div class="mini-widget mw-clock">
               <div class="big" id="heroClock">--:--:--</div>
               <div class="date" id="heroDate">加载中…</div>
               <div class="zone"><span>上海 · GMT+8</span><span id="heroZone">🇨🇳</span></div>
             </div>
-            <!-- 环形进度：data-ring 由 prify.js 在进入视口时填充（无需 .reveal 也可，此处为装饰） -->
+            <!-- 环形进度：data-ring 必须在 .reveal / .stagger 容器内，prify.js 的 IntersectionObserver
+                 只观察这两类元素，进视口时才把 stroke-dashoffset 从 289 改成 92% 那一档 -->
             <div class="mini-widget mw-ring">
               <div class="ring-wrap">
                 <svg class="ring" viewBox="0 0 110 110"><circle class="bg" cx="55" cy="55" r="46"/><circle class="val" cx="55" cy="55" r="46" data-ring="92"/></svg>
