@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-palette="violet">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FEF7FF">
+<meta name="description" content="Prify 小组件模板 — 纯内容页：Win11 小组件、统计与图表的 HTML 组件展示">
+<title>Prify Design · 小组件模板 — Widget、图表与统计</title>
+<script>
+/* ===== 防闪主题色：必须留在 <head> 内联，在首帧之前写入主题属性 ===== */
+(function(){
+  try{
+    var d=document.documentElement,t=localStorage.getItem('prify-theme');
+    if(!t) t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    d.setAttribute('data-theme',t);
+    d.setAttribute('data-palette',localStorage.getItem('prify-palette')||'violet');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="prify.css">
+<style>
+/* ===== widget.html 专属样式（本页自带，不进 prify.css） ===== */
+
+/* 组件栅格：小组件卡片用自适应列宽，代替 12 栅格 */
+.widget-grid.wide{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+
+/* 桌面窗口：在 12 栅格里会拉满整行（1240px），限宽居中贴近 hero 里的原比例 */
+.wg-desktop{max-width:680px;margin-inline:auto}
+
+/* 下载小组件：按钮与进度行 */
+.wg-dl .wg-dl-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12.5px;margin-bottom:8px;color:var(--on-surface-var)}
+.wg-dl .wg-dl-top b{color:var(--on-surface);font-variant-numeric:tabular-nums}
+.wg-dl .linear-progress{height:8px}
+.wg-dl .btn{margin-top:14px}
+
+/* 音乐播放器：封面 + 信息 + 进度 + 控制 */
+.wg-music .wg-top{display:flex;gap:12px;align-items:center}
+.wg-music .wg-art{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#8E24AA,#CE93D8);box-shadow:var(--elev-1);flex:none}
+.wg-music .wg-art .icon{width:22px;height:22px}
+.wg-music .wg-info{min-width:0}
+.wg-music .wg-title{font-size:14px;font-weight:640;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wg-music .wg-artist{font-size:12px;color:var(--on-surface-var);margin-top:2px}
+.wg-music .wg-bar{height:4px;border-radius:2px;background:var(--surface-c-highest);overflow:hidden;margin-top:14px}
+.wg-music .wg-bar i{display:block;height:100%;width:22%;border-radius:2px;background:var(--primary)}
+.wg-music.playing .wg-bar i{animation:wgPlay 16s linear forwards}
+@keyframes wgPlay{from{width:22%}to{width:100%}}
+.wg-music .wg-ctrl{display:flex;gap:8px;align-items:center;margin-top:14px}
+.wg-music .wg-time{margin-left:auto;font-size:11.5px;color:var(--on-surface-var);font-variant-numeric:tabular-nums}
+
+/* 日程列表 */
+.wg-agenda .wg-item{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--outline-var);font-size:13px;transition:transform .3s var(--ease)}
+.wg-agenda .wg-item:hover{transform:translateX(4px)}
+.wg-agenda .wg-item:last-child{border:none;padding-bottom:0}
+.wg-agenda .wg-time{font-size:12px;font-weight:640;color:var(--primary);font-variant-numeric:tabular-nums;width:44px;flex:none}
+.wg-agenda .wg-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--primary)}
+.wg-agenda .wg-dot.t2{background:var(--tertiary)}
+.wg-agenda .wg-dot.t3{background:var(--error)}
+</style>
+</head>
+<body>
+
+<!-- ====== SVG 图标库（必须先于 prify.js 注入） ====== -->
+<script src="icons.js"></script>
+
+<!-- ====== 启动画面：.hero-win 在 body.ready 前是透明的，用 boot 盖住首屏避免空洞 ====== -->
+<div class="boot" id="boot">
+  <div class="boot-inner">
+    <div class="boot-logo"><i></i><i></i><i></i><i></i></div>
+    <div class="boot-name">Prify<span>Design</span></div>
+    <div class="boot-dots"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="boot-ver">v5.3 · 小组件模板 · Material You × Fluent Design</div>
+  </div>
+</div>
+
+<!-- 顶部加载/滚动进度（prify.js 启动流程依赖此结构：#pageLoader > i） -->
+<div class="page-loader" id="pageLoader"><i></i></div>
+
+<!-- 本页是「无外壳纯内容」页：没有顶栏/抽屉/Dock/开始菜单/页脚/Hero。
+     prify.js 对缺失 id 走游离 div 兜底，图表、时钟、待办、环形等照常工作。 -->
+<main id="top">
+
+  <!-- ====== 小组件 ======
+       #components 是 prify.js navIO 的固定锚点之一（本页无导航，监听自动落空，无副作用） -->
+  <section id="components">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="overline">Widgets</div>
+        <h2>Win11 风格小组件</h2>
+        <p>上方桌面窗口的时钟与待办由 prify.js 驱动（复用 #heroClock / #miniTasks 等 id），下方卡片里下载与音乐自带内联脚本。</p>
+      </div>
+
+      <div class="comp-grid">
+        <!-- 桌面窗口：.win-card.hero-win 复用 Hero 的桌面样式；
+             .desk 额外加 .reveal —— ① 小组件交错入场 ② prify.js 在 .reveal 进入视口时
+             填充内部的 data-ring（环形进度从 0 转到 92%）。 -->
+        <div class="win-card hero-win wg-desktop" style="grid-column:1/-1;border-color:color-mix(in srgb,var(--outline-var) 80%,transparent)">
+          <div class="win-titlebar">
+            <span class="app-ico"></span>
+            <span class="win-title">Prify 桌面 — 小组件预览</span>
+            <div class="win-controls">
+              <button class="wc-min" aria-label="最小化"></button>
+              <button class="wc-max" aria-label="最大化"></button>
+              <button class="wc-close" aria-label="关闭"></button>
+            </div>
+          </div>
+          <div class="desk reveal">
+            <!-- 时钟组件：#heroClock/#heroDate 由 prify.js tickClock 每秒刷新 -->
+            <div class="mini-widget mw-clock">
+              <div class="big" id="heroClock">--:--:--</div>
+              <div class="date" id="heroDate">加载中…</div>
+              <div class="zone"><span>上海 · GMT+8</span><span id="heroZone">🇨🇳</span></div>
+            </div>
+            <!-- 环形进度：data-ring 值即百分比，stroke-dashoffset 由 prify.js 计算 -->
+            <div class="mini-widget mw-ring">
+              <div class="ring-wrap">
+                <svg class="ring" viewBox="0 0 110 110"><circle class="bg" cx="55" cy="55" r="46"/><circle class="val" cx="55" cy="55" r="46" data-ring="92"/></svg>
+                <b>92%</b>
+              </div>
+              <div class="cap">系统健康度</div>
+            </div>
+            <!-- 待办组件：#miniTasks 由 prify.js 注入 5 条任务并联动 #taskCount -->
+            <div class="mini-widget mw-task">
+              <h4>今日待办 <span id="taskCount">0/5 已完成</span></h4>
+              <div id="miniTasks"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 小组件卡片网格：.wide 是本页 <style> 里的自适应列宽版本 -->
+      <div class="widget-grid wide reveal" style="margin-top:20px">
+        <!-- 天气卡片 -->
+        <div class="widget w-weather">
+          <h4><svg class="icon"><use href="#i-cloud-sun"/></svg>天气 · 上海</h4>
+          <div class="sun"><svg><use href="#i-cloud-sun"/></svg></div>
+          <div class="temp">24°</div>
+          <div class="cond">晴间多云 · 空气优</div>
+        </div>
+
+        <!-- 性能监控：.linear-progress 用内联 width 表示数值，.indet 为不确定进度 -->
+        <div class="widget">
+          <h4><svg class="icon"><use href="#i-cpu"/></svg>性能监控</h4>
+          <div class="progress-item"><div class="pl"><span>CPU</span><b>38%</b></div><div class="linear-progress"><i style="width:38%"></i></div></div>
+          <div class="progress-item"><div class="pl"><span>内存</span><b>61%</b></div><div class="linear-progress"><i style="width:61%"></i></div></div>
+          <div class="progress-item"><div class="pl"><span>同步中</span><b>…</b></div><div class="linear-progress indet"><i></i></div></div>
+        </div>
+
+        <!-- 下载进度：id 刻意用 wgDl* 前缀 —— 避开 prify.js 滑块联动写入的 #dlBar/#dlPct
+             （若页面只有 dlPct 没有 radiusSlider，启动时会被写成 "undefined%"） -->
+        <div class="widget wg-dl">
+          <h4><svg class="icon"><use href="#i-download"/></svg>下载任务</h4>
+          <div class="wg-dl-top"><span>prify-widgets.zip</span><b id="wgDlPct">0%</b></div>
+          <div class="linear-progress"><i id="wgDlBar" style="width:0%"></i></div>
+          <button class="btn btn-tonal rip btn-sm" id="wgDlBtn" style="width:100%"><svg class="icon"><use href="#i-download"/></svg>开始下载</button>
+        </div>
+
+        <!-- 音乐播放器：.playing 时进度条走 CSS 动画（页尾内联脚本切换类名） -->
+        <div class="widget wg-music" id="wgMusic">
+          <h4><svg class="icon"><use href="#i-music"/></svg>正在播放</h4>
+          <div class="wg-top">
+            <div class="wg-art"><svg class="icon"><use href="#i-music"/></svg></div>
+            <div class="wg-info">
+              <div class="wg-title">Aurora Drift</div>
+              <div class="wg-artist">Prify Ensemble · 电子</div>
+            </div>
+          </div>
+          <div class="wg-bar"><i></i></div>
+          <div class="wg-ctrl">
+            <button class="icon-btn filled rip" id="wgPlay" aria-label="播放/暂停"><svg class="icon"><use href="#i-music"/></svg></button>
+            <button class="icon-btn tonal rip" data-tip="收藏"><svg class="icon"><use href="#i-heart"/></svg></button>
+            <span class="wg-time">1:24 / 6:08</span>
+          </div>
+        </div>
+
+        <!-- 快捷开关：.m3-switch 是纯 CSS 组件，不依赖任何 JS id -->
+        <div class="widget">
+          <h4><svg class="icon"><use href="#i-sliders"/></svg>快捷设置</h4>
+          <div class="switch-row">
+            <div><div class="st">勿扰模式</div><div class="sd">暂停全部通知</div></div>
+            <label class="m3-switch"><input type="checkbox"><span class="track"><span class="thumb"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="sw-x" pathLength="1" d="M4.4 4.4 11.6 11.6"/><path class="sw-x" pathLength="1" d="M4.4 11.6 11.6 4.4"/><path class="sw-chk" pathLength="1" d="M3.9 8.4 6.7 11.2 12.1 5.1"/></svg></span></span></label>
+          </div>
+          <div class="switch-row">
+            <div><div class="st">自动同步</div><div class="sd">仅在 Wi-Fi 下</div></div>
+            <label class="m3-switch"><input type="checkbox" checked><span class="track"><span class="thumb"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="sw-x" pathLength="1" d="M4.4 4.4 11.6 11.6"/><path class="sw-x" pathLength="1" d="M4.4 11.6 11.6 4.4"/><path class="sw-chk" pathLength="1" d="M3.9 8.4 6.7 11.2 12.1 5.1"/></svg></span></span></label>
+          </div>
+        </div>
+
+        <!-- 日程：本页 <style> 中的 .wg-agenda 列表样式 -->
+        <div class="widget wg-agenda">
+          <h4><svg class="icon"><use href="#i-calendar"/></svg>今日日程</h4>
+          <div class="wg-item"><span class="wg-time">10:00</span><span class="wg-dot"></span>设计走查 · 会议室 A</div>
+          <div class="wg-item"><span class="wg-time">14:30</span><span class="wg-dot t2"></span>动效评审（线上）</div>
+          <div class="wg-item"><span class="wg-time">17:00</span><span class="wg-dot t3"></span>发布例会</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 图表 ======
+       图表结构：#chartSeg / #bars / #barLabels / .line-chart-wrap /
+       #lcMain·#lcPrev·#lcArea·#lcDots 全部由 prify.js 接管（进入视口才绘制动画）。 -->
+  <section id="charts" style="background:var(--surface-c-low);border-block:1px solid var(--outline-var)">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="overline">Charts</div>
+        <h2>纯 CSS/JS 图表</h2>
+        <p>柱状图与折线图不依赖任何图表库：SVG polyline + CSS 动画绘制，分段控件切换数据周期。</p>
+      </div>
+
+      <div class="comp-grid">
+        <div class="panel span12 win-card reveal" style="padding:0;border-color:color-mix(in srgb,var(--outline-var) 80%,transparent)">
+          <div class="win-titlebar"><span class="app-ico"></span><span class="win-title">数据分析 — usage.prify.design</span>
+            <div class="win-controls"><button class="wc-min"></button><button class="wc-max"></button><button class="wc-close"></button></div>
+          </div>
+          <div style="padding:clamp(20px,2.6vw,30px)">
+            <div class="chart-head">
+              <div>
+                <h3 style="font-size:16.5px;font-weight:640">组件调用趋势</h3>
+                <p class="hint" style="margin:2px 0 0">过去 12 个周期的数据，切换周期查看（纯 CSS/JS 绘制）</p>
+              </div>
+              <!-- 分段控件 #chartSeg：prify.js 监听点击，按被点按钮的 data-key（d/w/m）
+                   从内置数据集取出对应柱状数组重绘 #bars 与 #barLabels，并移动 .seg-thumb -->
+              <div class="segmented" id="chartSeg">
+                <span class="seg-thumb"></span>
+                <button class="seg-btn selected rip" data-key="d"><svg class="icon"><use href="#i-check"/></svg>日</button>
+                <button class="seg-btn rip" data-key="w"><svg class="icon"><use href="#i-check"/></svg>周</button>
+                <button class="seg-btn rip" data-key="m"><svg class="icon"><use href="#i-check"/></svg>月</button>
+              </div>
+            </div>
+            <div class="chart-legend"><span><i style="background:var(--primary)"></i>本周期</span><span><i style="background:var(--outline)"></i>上一周期</span></div>
+            <div class="bars" id="bars"></div>
+            <div class="bar-labels" id="barLabels"></div>
+            <div class="line-chart-wrap">
+              <h4 style="font-size:14px;font-weight:640;margin-bottom:12px">周活跃开发者（万）</h4>
+              <div class="lc-stage">
+                <svg class="line-chart" viewBox="0 0 600 220" preserveAspectRatio="none" style="height:190px">
+                  <defs><linearGradient id="lcFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="var(--primary)" stop-opacity=".28"/><stop offset="1" stop-color="var(--primary)" stop-opacity="0"/>
+                  </linearGradient></defs>
+                  <path id="lcArea" fill="url(#lcFill)"></path>
+                  <polyline id="lcPrev" class="lc-line l2" points=""></polyline>
+                  <polyline id="lcMain" class="lc-line" points="" pathLength="1" stroke="var(--primary)"></polyline>
+                </svg>
+                <div class="lc-dots" id="lcDots"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 统计 ======
+       data-count 计数动画只在 .reveal/.stagger 祖先进入视口时触发（prify.js 的 reveal IO），
+       data-decimals 控制小数位，data-suffix 是后缀。 -->
+  <section id="stats">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="overline">Statistics</div>
+        <h2>统计数字</h2>
+        <p>滚动到视口时从 0 计数到目标值——.stagger 负责子项依次入场，data-count 负责数值动画。</p>
+      </div>
+      <div class="stats-band stagger">
+        <div class="stat"><div class="num" data-count="2.3" data-decimals="1" data-suffix="M+">0</div><div class="lab">累计下载量</div></div>
+        <div class="stat"><div class="num" data-count="128" data-suffix="+">0</div><div class="lab">开源组件</div></div>
+        <div class="stat"><div class="num" data-count="18" data-suffix="k">0</div><div class="lab">GitHub Star</div></div>
+        <div class="stat"><div class="num" data-count="99.9" data-decimals="1" data-suffix="%">0</div><div class="lab">服务可用性</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ====== Snackbar（全页单例）：本页下载完成的提示会用到，prify.js 的 snackbar() 直接可调 ====== -->
+<div class="snackbar" id="snackbar"><span class="sb-bar"></span><span id="sbText"></span><button id="sbAction"></button></div>
+
+<!-- prify.js 必须在 icons.js 之后同步执行（无 defer） -->
+<script src="prify.js"></script>
+
+<!-- ====== widget.html 内联脚本（本页专属交互） ====== -->
+<script>
+/* 下载任务：自绘进度条。id 用 wgDl* 前缀，避开 prify.js 滑块联动的 #dlBar/#dlPct */
+(function(){
+  var bar = document.getElementById('wgDlBar'),
+      pct = document.getElementById('wgDlPct'),
+      btn = document.getElementById('wgDlBtn'),
+      timer = null;
+  btn.onclick = function(){
+    if (timer) return;                       /* 已在下载中 */
+    var p = 0;
+    btn.disabled = true;
+    timer = setInterval(function(){
+      p = Math.min(100, p + 3 + Math.random() * 8);
+      bar.style.width = p.toFixed(0) + '%';
+      pct.textContent = p.toFixed(0) + '%';
+      if (p >= 100) {
+        clearInterval(timer); timer = null;
+        btn.disabled = false;
+        snackbar('prify-widgets.zip 下载完成（1.4MB）');
+      }
+    }, 180);
+  };
+})();
+
+/* 音乐播放器：切换 .playing 触发进度条 CSS 动画 */
+(function(){
+  var player = document.getElementById('wgMusic');
+  player.querySelector('#wgPlay').onclick = function(){
+    var on = player.classList.toggle('playing');
+    snackbar(on ? '正在播放 · Aurora Drift' : '已暂停');
+  };
+})();
+</script>
+</body>
+</html>

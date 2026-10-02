@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-palette="violet">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FEF7FF">
+<meta name="description" content="Prify 基础模板 — 完整应用外壳 + Hero + 表单与核心组件的纯 HTML 组件展示页">
+<title>Prify Design · 基础模板 — 外壳、表单与组件</title>
+<script>
+/* ===== 防闪主题色：在 CSS 解析与首次绘制之前立即应用已保存的主题（必须留在 <head> 内联） ===== */
+(function(){
+  try{
+    var d=document.documentElement,t=localStorage.getItem('prify-theme');
+    if(!t) t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    d.setAttribute('data-theme',t);
+    d.setAttribute('data-palette',localStorage.getItem('prify-palette')||'violet');
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="prify.css">
+</head>
+<body>
+
+<!-- ====== SVG 图标库（icons.js 同步注入，必须先于 prify.js） ====== -->
+<script src="icons.js"></script>
+
+<!-- ====== 启动画面（覆盖首次绘制，杜绝主题闪色；就绪后由 prify.js 淡出移除） ====== -->
+<div class="boot" id="boot">
+  <div class="boot-inner">
+    <div class="boot-logo"><i></i><i></i><i></i><i></i></div>
+    <div class="boot-name">Prify<span>Design</span></div>
+    <div class="boot-dots"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="boot-ver">v5.3 · 基础模板 · Material You × Fluent Design</div>
+  </div>
+</div>
+
+<!-- 顶部加载/滚动进度（boot 期间是加载条，就绪后变滚动进度条） -->
+<div class="page-loader" id="pageLoader"><i></i></div>
+
+<!-- ====== 顶部导航 ======
+     本页所有链接都是页内锚点：#components 走 prify.js 的 navIO 固定 7 id 监听，
+     #forms/#feedback/#navs/#cta 不在固定列表内，由 prify.js 新增的通用 scroll-spy 接管高亮。 -->
+<header class="topbar" id="topbar">
+  <div class="container">
+    <a class="brand" href="#top"><svg><use href="#i-logo"/></svg>Prify<em>Design</em></a>
+    <nav class="nav" id="navLinks">
+      <a href="#components" class="active">组件</a>
+      <a href="#forms">表单</a>
+      <a href="#feedback">反馈</a>
+      <a href="#navs">导航</a>
+      <a href="#cta">订阅</a>
+    </nav>
+    <div class="top-actions">
+      <!-- #githubBtn → prify.js 给一条 snackbar 提示；数字是演示文案 -->
+      <button class="github-btn rip" id="githubBtn"><svg class="icon"><use href="#i-code"/></svg><span>GitHub · 18k</span></button>
+      <!-- #themeBtn 切换深浅主题（prify.js 改 html[data-theme] 并换 #themeIcon 的图标与 localStorage） -->
+      <button class="icon-btn rip" id="themeBtn" aria-label="切换深浅主题"><svg class="icon" id="themeIcon"><use href="#i-moon"/></svg></button>
+      <button class="icon-btn rip menu-btn" id="menuBtn" aria-label="打开菜单"><svg class="icon"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<!-- ====== 移动端抽屉 ====== -->
+<div class="scrim" id="drawerScrim"></div>
+<aside class="drawer" id="drawer" aria-label="导航抽屉">
+  <div class="drawer-head">
+    <a class="brand" href="#top"><svg><use href="#i-logo"/></svg>Prify<em>Design</em></a>
+    <button class="icon-btn rip" id="drawerClose" aria-label="关闭菜单"><svg class="icon"><use href="#i-close"/></svg></button>
+  </div>
+  <nav>
+    <a href="#components"><svg class="icon"><use href="#i-grid"/></svg>组件库</a>
+    <a href="#forms"><svg class="icon"><use href="#i-sliders"/></svg>表单控件</a>
+    <a href="#feedback"><svg class="icon"><use href="#i-bell"/></svg>反馈与状态</a>
+    <a href="#navs"><svg class="icon"><use href="#i-layers"/></svg>导航组件</a>
+    <a href="#cta"><svg class="icon"><use href="#i-sparkles"/></svg>订阅更新</a>
+  </nav>
+  <div class="pdots-wrap" style="padding-top:18px;border-top:1px solid var(--outline-var)">
+    <div style="font-size:12px;font-weight:700;color:var(--on-surface-var);margin-bottom:10px">动态取色</div>
+    <!-- 色板圆点：prify.js 的 buildPdots() 会注入 4 个按钮 -->
+    <div class="pdots" id="pdotsDrawer"></div>
+  </div>
+</aside>
+
+<!-- ====== 页面结构总览 ======
+     外壳（不随 main 滚动，固定/覆盖层，标记都在文件后半段）：
+       顶栏 .topbar → 移动端抽屉 .drawer → 页脚 footer → Dock #dock →
+       开始菜单 #startMenu → 对话框 #dialogWrap → Snackbar #snackbar → FAB #fab。
+     main 内的内容分区（导航与页脚锚点都指到这里）：
+       #hero      Hero + Win11 桌面窗口（时钟/环形/待办）
+       #components 按钮家族、图标按钮与 FAB
+       #forms     搜索框、浮动标签、下拉、开关、单选/复选、滑块、表单状态
+       #feedback  Banner、Snackbar/Dialog 触发、徽章与提示
+       #navs      Tabs、Chips、Segmented、手风琴
+       #cta       订阅表单
+     本页 data-* 钩子速查：
+       data-tip      悬停气泡提示（纯 CSS）
+       data-app      开始菜单里的应用名（点击弹 snackbar）
+       data-pane     对应 .tabpane 的 id，供 Tabs 切换
+       data-ring     环形进度百分比（进入视口时由 prify.js 填充）
+       data-count    数字计数目标值，data-decimals 小数位，data-suffix 后缀 -->
+<main id="top">
+  <!-- ====== Hero ======
+       进场动画依赖 body.ready（prify.js 启动流程添加）；
+       鼠标视差与 3D 倾斜由 prify.js 绑定在 #hero / #heroWin 上。 -->
+  <section class="hero" id="hero">
+    <!-- 背景光斑：.blob-1/2/3 是纯 CSS 模糊色块，跟随主题色变化，无交互 -->
+    <div class="hero-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+    <div class="container hero-grid">
+      <div>
+        <div class="hero-badge"><b>Base</b>基础模板 · 外壳 + Hero + 表单组件</div>
+        <h1><span class="hl"><span>完整外壳</span></span><span class="hl"><span class="grad">与基础组件</span></span></h1>
+        <!-- 打字机：prify.js 轮播文案写入 #typeWord，.caret 是闪烁光标 -->
+        <p class="hero-sub">顶栏、抽屉、Dock、开始菜单全部就位，组件与表单开箱即用——从 <span class="type" id="typeWord"></span><i class="caret"></i> 开始。</p>
+        <div class="hero-cta">
+          <!-- #ctaStart → prify.js 打开开始菜单；#ctaDocs → snackbar 提示 -->
+          <button class="btn btn-filled btn-lg rip" id="ctaStart"><svg class="icon"><use href="#i-bolt"/></svg>打开开始菜单</button>
+          <button class="btn btn-tonal btn-lg rip" id="ctaDocs">查看文档<svg class="icon"><use href="#i-arrow-r"/></svg></button>
+        </div>
+        <div class="hero-meta">
+          <span><svg class="icon"><use href="#i-star"/></svg>GitHub 18k Star</span>
+          <span><svg class="icon"><use href="#i-shield"/></svg>PolyForm 非商业许可</span>
+          <span><svg class="icon"><use href="#i-devices"/></svg>14 端全覆盖</span>
+        </div>
+      </div>
+      <!-- Win11 模拟桌面窗口：.desk 内三个迷你组件（时钟/环形/待办）由 prify.js 驱动 -->
+      <div class="win-wrap">
+        <div class="win-card hero-win" id="heroWin">
+          <div class="win-titlebar">
+            <span class="app-ico"></span>
+            <span class="win-title">Prify 基础模板 — 演示版 5.3</span>
+            <div class="win-controls">
+              <button class="wc-min" aria-label="最小化"></button>
+              <button class="wc-max" aria-label="最大化"></button>
+              <button class="wc-close" aria-label="关闭"></button>
+            </div>
+          </div>
+          <div class="desk">
+            <!-- 时钟组件：#heroClock/#heroDate 每秒刷新（prify.js tickClock） -->
+            <div class="mini-widget mw-clock">
+              <div class="big" id="heroClock">--:--:--</div>
+              <div class="date" id="heroDate">加载中…</div>
+              <div class="zone"><span>上海 · GMT+8</span><span id="heroZone">🇨🇳</span></div>
+            </div>
+            <!-- 环形进度：data-ring 由 prify.js 在进入视口时填充（无需 .reveal 也可，此处为装饰） -->
+            <div class="mini-widget mw-ring">
+              <div class="ring-wrap">
+                <svg class="ring" viewBox="0 0 110 110"><circle class="bg" cx="55" cy="55" r="46"/><circle class="val" cx="55" cy="55" r="46" data-ring="92"/></svg>
+                <b>92%</b>
+              </div>
+              <div class="cap">系统健康度</div>
+            </div>
+            <!-- 待办组件：#miniTasks 由 prify.js 注入，#taskCount 联动计数 -->
+            <div class="mini-widget mw-task">
+              <h4>今日待办 <span id="taskCount">0/5 已完成</span></h4>
+              <div id="miniTasks"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 组件库：按钮 ======
+       .comp-grid 是 12 栅格，.span4/.span5/.span7/.span12 控制占比（≤960px 自动落满整行） -->
+  <section id="components">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="overline">Component Gallery</div>
+        <h2>核心组件，开箱即用</h2>
+        <p>每个面板就是一段可直接复制的 HTML：类名即变体，交互由 prify.js 全局接管——直接点它们。</p>
+      </div>
+
+      <div class="comp-grid">
+        <!-- 按钮家族：.btn + 变体类，.rip 开启涟漪（全局 pointerdown 委托） -->
+        <div class="panel span7 reveal" id="btns">
+          <h3><svg class="icon"><use href="#i-bolt"/></svg>按钮家族</h3>
+          <p class="hint">Filled / Tonal / Outlined / Text / Elevated / Error，全部带涟漪、扫光与图标微动效。</p>
+          <div class="comp-label">常用按钮</div>
+          <div class="comp-row">
+            <button class="btn btn-filled rip">主要操作</button>
+            <button class="btn btn-tonal rip">次级操作</button>
+            <button class="btn btn-outlined rip">描边按钮</button>
+            <button class="btn btn-text rip">文本按钮</button>
+            <button class="btn btn-elevated rip">悬浮按钮</button>
+            <button class="btn btn-filled rip" disabled>禁用状态</button>
+          </div>
+          <div class="comp-label">带图标（含行为演示）</div>
+          <div class="comp-row">
+            <!-- #dlBtn：点击后变 .spinner「下载中…」再恢复并弹 snackbar -->
+            <button class="btn btn-filled rip" id="dlBtn"><svg class="icon"><use href="#i-download"/></svg>下载 SDK</button>
+            <!-- #shareBtn：点击弹 snackbar「链接已复制」 -->
+            <button class="btn btn-tonal rip" id="shareBtn"><svg class="icon"><use href="#i-share"/></svg>分享</button>
+            <!-- #dangerBtn：危险操作 → snackbar「已拦截…撤销」 -->
+            <button class="btn btn-error rip" id="dangerBtn"><svg class="icon"><use href="#i-trash"/></svg>危险操作</button>
+          </div>
+          <div class="comp-label">加载态</div>
+          <div class="comp-row">
+            <span class="spinner"></span>
+            <span style="font-size:13px;color:var(--on-surface-var)">按钮内嵌 &lt;span class="spinner"&gt; 即为加载态（见「下载 SDK」）</span>
+          </div>
+        </div>
+
+        <!-- 图标按钮 / FAB：.icon-btn + tonal/filled 修饰；FAB 用定尺寸 .btn 实现 -->
+        <div class="panel span5 reveal">
+          <h3><svg class="icon"><use href="#i-star"/></svg>图标按钮与 FAB</h3>
+          <p class="hint">data-tip 悬停弹出气泡提示（CSS 驱动，无需 JS）。</p>
+          <div class="comp-label">图标按钮</div>
+          <div class="comp-row">
+            <!-- #likeBtn：点击切换 .liked 心跳 + snackbar -->
+            <button class="icon-btn rip" data-tip="点我试试心跳动画" id="likeBtn"><svg class="icon"><use href="#i-heart"/></svg></button>
+            <button class="icon-btn tonal rip" data-tip="Tonal 图标按钮"><svg class="icon"><use href="#i-star"/></svg></button>
+            <button class="icon-btn filled rip" data-tip="Filled 图标按钮"><svg class="icon"><use href="#i-bell"/></svg></button>
+          </div>
+          <div class="comp-label">FAB（定尺寸 + 圆角）</div>
+          <div class="comp-row">
+            <button class="btn btn-elevated rip" style="width:48px;height:48px;border-radius:16px;padding:0" aria-label="小 FAB"><svg class="icon" style="margin:auto"><use href="#i-plus"/></svg></button>
+            <button class="btn btn-filled rip" style="width:56px;height:56px;border-radius:16px;padding:0;box-shadow:var(--elev-2)" aria-label="大 FAB"><svg class="icon" style="margin:auto"><use href="#i-pen"/></svg></button>
+            <span style="width:12px"></span>
+            <span style="font-size:13px;color:var(--on-surface-var)">右下角固定 FAB 见 #fab（滚过 560px 后浮出）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 表单控件 ====== -->
+  <section id="forms" style="background:var(--surface-c-low);border-block:1px solid var(--outline-var)">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="overline">Form Controls</div>
+        <h2>表单控件与状态</h2>
+        <p>搜索框、浮动标签、暴露式下拉、开关、单选复选与滑块——一段 Win11 窗口里的完整设置表单。</p>
+      </div>
+
+      <div class="comp-grid">
+        <!-- 表单窗口：Win11 标题栏 + 设置表单（.win-card 无 padding，内容自管） -->
+        <div class="panel span7 win-card reveal" id="formWin" style="padding:0;border-color:color-mix(in srgb,var(--outline-var) 80%,transparent)">
+          <div class="win-titlebar"><span class="app-ico"></span><span class="win-title">账户设置 — Prify</span>
+            <div class="win-controls"><button class="wc-min"></button><button class="wc-max"></button><button class="wc-close"></button></div>
+          </div>
+          <div style="padding:22px">
+            <h3 style="font-size:16.5px;font-weight:640;margin-bottom:18px">表单控件</h3>
+            <!-- 搜索框：.searchbar = 图标 + input + kbd 快捷键提示 -->
+            <div class="searchbar" style="margin-bottom:14px">
+              <svg class="icon" style="color:var(--on-surface-var)"><use href="#i-search"/></svg>
+              <input type="text" placeholder="搜索组件、文档…" id="formSearch">
+              <kbd>Ctrl K</kbd>
+            </div>
+            <!-- 浮动标签字段：input 必须 placeholder=" "，label 的 for 指向 input 的 id -->
+            <div class="form-grid2">
+              <div class="tf"><input type="text" id="fUser" placeholder=" " autocomplete="off"><label for="fUser">用户名</label></div>
+              <div class="tf"><input type="email" id="fMail" placeholder=" "><label for="fMail">邮箱地址</label></div>
+            </div>
+            <!-- 暴露式下拉：.tf.sel 内是 button 字段；选项菜单 #teamList 由 prify.js 注入 body -->
+            <div class="tf sel" id="teamSel" style="margin-top:14px">
+              <button type="button" class="sel-field rip" id="teamField" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="teamList" aria-labelledby="teamLabel">
+                <span class="sel-ic" id="teamIc"></span>
+                <span class="sel-value" id="teamValue"></span>
+                <svg class="icon sel-arrow" style="width:16px;height:16px"><use href="#i-chevron-d"/></svg>
+              </button>
+              <label id="teamLabel">所属团队</label>
+            </div>
+            <input type="hidden" name="team" id="teamInput" value="">
+            <!-- M3 开关：label.m3-switch > input + .track > .thumb > svg（勾叉双 path，pathLength="1"） -->
+            <div style="margin-top:6px">
+              <div class="switch-row">
+                <div><div class="st">深色模式跟随系统</div><div class="sd">关闭时使用手动切换的主题</div></div>
+                <label class="m3-switch"><input type="checkbox" id="swFollow"><span class="track"><span class="thumb"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="sw-x" pathLength="1" d="M4.4 4.4 11.6 11.6"/><path class="sw-x" pathLength="1" d="M4.4 11.6 11.6 4.4"/><path class="sw-chk" pathLength="1" d="M3.9 8.4 6.7 11.2 12.1 5.1"/></svg></span></span></label>
+              </div>
+              <div class="switch-row">
+                <div><div class="st">动态取色</div><div class="sd">从壁纸提取主题色</div></div>
+                <label class="m3-switch"><input type="checkbox" checked id="swDyn"><span class="track"><span class="thumb"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="sw-x" pathLength="1" d="M4.4 4.4 11.6 11.6"/><path class="sw-x" pathLength="1" d="M4.4 11.6 11.6 4.4"/><path class="sw-chk" pathLength="1" d="M3.9 8.4 6.7 11.2 12.1 5.1"/></svg></span></span></label>
+              </div>
+            </div>
+            <!-- 单选/复选：.m3-radio 用 name 分组；.m3-check 的 .cb 内放 #i-check -->
+            <div class="comp-label">单选与复选</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div>
+                <label class="m3-radio"><input type="radio" name="plan" checked><span class="rb"></span>社区版</label>
+                <label class="m3-radio"><input type="radio" name="plan"><span class="rb"></span>专业版</label>
+              </div>
+              <div>
+                <label class="m3-check"><input type="checkbox" checked><span class="cb"><svg><use href="#i-check"/></svg></span>接收更新</label>
+                <label class="m3-check"><input type="checkbox"><span class="cb"><svg><use href="#i-check"/></svg></span>加入内测</label>
+              </div>
+            </div>
+            <!-- 滑块：#radiusSlider 拖动会联动 #radiusOut，并把百分比写进轨道渐变用的自定义属性 -->
+            <div class="slider-wrap" style="margin-top:10px">
+              <div class="slider-head"><span>界面圆角缩放</span><output id="radiusOut">100%</output></div>
+              <input type="range" min="0" max="100" value="100" id="radiusSlider">
+            </div>
+            <!-- #formSubmit：未选团队 → .tf.invalid + shake + snackbar；通过 → spinner → 成功提示 -->
+            <button class="btn btn-filled rip" style="width:100%;margin-top:14px" id="formSubmit"><svg class="icon"><use href="#i-send"/></svg>保存设置</button>
+          </div>
+        </div>
+
+        <!-- 状态与校验：静态演示 invalid / 禁用 / 进度 -->
+        <div class="panel span5 reveal">
+          <h3><svg class="icon"><use href="#i-shield"/></svg>状态与校验</h3>
+          <p class="hint">校验失败给 .tf 加 .invalid（自动 shake 并把标签/边框染红）。</p>
+          <div class="comp-label">校验失败字段</div>
+          <div class="tf invalid"><input type="email" value="prify@"><label>邮箱地址</label></div>
+          <div class="comp-label">禁用态</div>
+          <div class="comp-row">
+            <button class="btn btn-filled rip" disabled>禁用按钮</button>
+            <label class="m3-check"><input type="checkbox" disabled><span class="cb"><svg><use href="#i-check"/></svg></span>禁用复选</label>
+          </div>
+          <div class="comp-label">进度指示</div>
+          <div class="progress-item"><div class="pl"><span>确定进度</span><b>45%</b></div><div class="linear-progress"><i style="width:45%"></i></div></div>
+          <div class="progress-item"><div class="pl"><span>不确定进度</span><b>…</b></div><div class="linear-progress indet"><i></i></div></div>
+          <p class="hint" style="margin-top:16px">Ctrl / Cmd + K 随时打开开始菜单，Esc 关闭所有浮层。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 反馈与状态 ====== -->
+  <section id="feedback">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="overline">Feedback</div>
+        <h2>反馈与状态提示</h2>
+        <p>横幅、Snackbar、对话框、徽章与工具提示：轻量的用 CSS，需要时序的交给 prify.js。</p>
+      </div>
+
+      <div class="comp-grid">
+        <!-- 横幅 Banner：.banner + 可选 .error（错误容器配色反转） -->
+        <div class="panel span4 reveal">
+          <h3><svg class="icon"><use href="#i-palette"/></svg>横幅 Banner</h3>
+          <p class="hint">默认为支持性横幅，加 .error 即切换为错误配色。</p>
+          <div class="banner">
+            <svg class="icon"><use href="#i-palette"/></svg>
+            <div><div class="bt">支持性横幅</div><div class="bd">检测到新色板「落日」，点击右下角色点即刻切换整套主题。</div></div>
+          </div>
+          <div class="banner error">
+            <svg class="icon"><use href="#i-shield"/></svg>
+            <div><div class="bt">错误横幅</div><div class="bd">同步失败，网络连接已超时，正在自动重试。</div></div>
+          </div>
+        </div>
+
+        <!-- 弹层反馈：Snackbar / Dialog 的触发按钮，实际标记在页面底部 -->
+        <div class="panel span4 reveal">
+          <h3><svg class="icon"><use href="#i-bell"/></svg>弹层反馈</h3>
+          <p class="hint">#snackbar 与 #dialogWrap 是全页单例，放在 body 末尾即可复用。</p>
+          <div class="comp-label">触发器</div>
+          <div class="comp-row" style="margin-bottom:8px">
+            <button class="btn btn-tonal rip btn-sm" id="sbBtn">显示 Snackbar</button>
+            <button class="btn btn-filled rip btn-sm" id="dlgBtn">打开对话框</button>
+          </div>
+          <div class="comp-label">调用方式</div>
+          <div class="banner" style="margin-bottom:0">
+            <svg class="icon"><use href="#i-code"/></svg>
+            <div><div class="bt">一行代码</div><div class="bd">snackbar('提示文案', '撤销', fn)；对话框用 setDialogContent({...}) 换内容。</div></div>
+          </div>
+        </div>
+
+        <!-- 徽章与提示：.badge 绝对定位挂载在 .has-badge 内；data-tip 纯 CSS 气泡 -->
+        <div class="panel span4 reveal" id="badges">
+          <h3><svg class="icon"><use href="#i-help"/></svg>徽章与提示</h3>
+          <p class="hint">Badge 叠在按钮右上角，支持数字与文本两种内容。</p>
+          <div class="badge-demo">
+            <span class="has-badge"><button class="icon-btn tonal rip" data-tip="通知"><svg class="icon"><use href="#i-bell"/></svg></button><span class="badge">9</span></span>
+            <span class="has-badge"><button class="icon-btn rip" data-tip="消息"><svg class="icon"><use href="#i-mail"/></svg></button><span class="badge" style="background:var(--primary)">NEW</span></span>
+            <span class="has-badge"><button class="icon-btn rip" data-tip="待办"><svg class="icon"><use href="#i-calendar"/></svg></button><span class="badge">3</span></span>
+            <span data-tip="把鼠标悬停在这里试试 Tooltip →" style="font-size:13px;color:var(--on-surface-var);cursor:help;border-bottom:1px dashed var(--outline)">什么是 Tooltip？</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== 导航组件 ======
+       Tabs 指示条 / Segmented 色块都由 prify.js 依 offsetLeft 定位，容器需有稳定尺寸 -->
+  <section id="navs" style="background:var(--surface-c-low);border-block:1px solid var(--outline-var)">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="overline">Navigation</div>
+        <h2>导航与内容组织</h2>
+        <p>标签页、分段控件与手风琴：三套最常见的页内导航，指示条与展开动画全部接管。</p>
+      </div>
+
+      <div class="comp-grid">
+        <!-- Tabs：.tab[data-pane] 指向 .tabpane 的 id，#tabInd 是滑动指示条 -->
+        <div class="panel span7 reveal">
+          <h3><svg class="icon"><use href="#i-layers"/></svg>标签页 Tabs</h3>
+          <p class="hint">M3 Primary Tabs，指示条平滑滑动过渡。</p>
+          <div class="tabs" role="tablist">
+            <button class="tab active" data-pane="tp1" role="tab">成员</button>
+            <button class="tab" data-pane="tp2" role="tab">动态</button>
+            <button class="tab" data-pane="tp3" role="tab">标签</button>
+            <span class="tab-ind" id="tabInd"></span>
+          </div>
+          <div class="tabpane active" id="tp1">
+            <div class="member-row"><span class="avatar" style="background:linear-gradient(135deg,#7C4DFF,#B388FF)">林</span><div><div class="mn">林澈</div><div class="mt">创始人 · 在线</div></div></div>
+            <div class="member-row"><span class="avatar" style="background:linear-gradient(135deg,#FF7043,#FFAB91)">苏</span><div><div class="mn">苏晴</div><div class="mt">视觉语言 · 会议中</div></div></div>
+            <div class="member-row"><span class="avatar" style="background:linear-gradient(135deg,#26A69A,#80CBC4)">陈</span><div><div class="mn">陈屿</div><div class="mt">动效工程 · 离开 12 分钟</div></div></div>
+          </div>
+          <div class="tabpane" id="tp2">
+            <div class="feed-row"><svg class="icon"><use href="#i-sparkles"/></svg><div><p>Prify AI 自动为 3 个组件补齐了暗色主题令牌。</p><time>10 分钟前</time></div></div>
+            <div class="feed-row"><svg class="icon"><use href="#i-code"/></svg><div><p>周然 提交了 a1b2c3d：修复滑块在触屏上的拖拽偏移。</p><time>1 小时前</time></div></div>
+          </div>
+          <!-- .chip-cloud：点击 chip 切换 .selected（选中时浮现 #i-check） -->
+          <div class="tabpane" id="tp3">
+            <div class="chip-cloud">
+              <span class="chip selected"><svg class="icon"><use href="#i-check"/></svg>设计系统</span>
+              <span class="chip">Material 3</span><span class="chip">Fluent</span><span class="chip">动态取色</span>
+              <span class="chip">亚克力</span><span class="chip">无障碍</span><span class="chip">深色模式</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Segmented：容器内必须有 .seg-thumb + 若干 .seg-btn（第一个加 .selected） -->
+        <div class="panel span5 reveal">
+          <h3><svg class="icon"><use href="#i-grid"/></svg>分段控件 Segmented</h3>
+          <p class="hint">色块吸附到 .selected 按钮，宽度/位置随窗口 resize 重算。</p>
+          <div class="segmented">
+            <span class="seg-thumb"></span>
+            <button class="seg-btn selected rip"><svg class="icon"><use href="#i-check"/></svg>日</button>
+            <button class="seg-btn rip"><svg class="icon"><use href="#i-check"/></svg>周</button>
+            <button class="seg-btn rip"><svg class="icon"><use href="#i-check"/></svg>月</button>
+          </div>
+          <div class="comp-label">用法</div>
+          <div class="banner" style="margin-bottom:0">
+            <svg class="icon"><use href="#i-code"/></svg>
+            <div><div class="bt">结构</div><div class="bd">.segmented &gt; .seg-thumb + .seg-btn*（首个 .selected）；无 id 的分段控件只做选中切换。</div></div>
+          </div>
+        </div>
+
+        <!-- 手风琴：.acc-head 点击切换父级 .open（网格行 0fr↔1fr 展开） -->
+        <div class="panel span12 reveal">
+          <h3><svg class="icon"><use href="#i-clock"/></svg>手风琴 Accordion</h3>
+          <p class="hint">展开状态 = .acc.open，标题栏 + 图标旋转 + 内容行高同时过渡。</p>
+          <div class="acc open">
+            <button class="acc-head">Prify 和直接用 MUI / Fluent UI 有什么区别？<svg class="icon"><use href="#i-plus"/></svg></button>
+            <div class="acc-body"><div><p>那些库各自忠于一种平台语言。Prify 在令牌层做了统一抽象：同一套语义色、圆角、动效曲线，既能渲染成 M3 的表达，也能渲染成 Fluent 的表达。</p></div></div>
+          </div>
+          <div class="acc" style="margin-top:12px">
+            <button class="acc-head">基础模板包含哪些东西？<svg class="icon"><use href="#i-plus"/></svg></button>
+            <div class="acc-body"><div><p>顶栏、抽屉、Dock、开始菜单、对话框、Snackbar、FAB 与页脚的完整外壳，加上 Hero 与本页展示的表单/反馈/导航组件。</p></div></div>
+          </div>
+          <div class="acc" style="margin-top:12px">
+            <button class="acc-head">组件之间如何复用 JS？<svg class="icon"><use href="#i-plus"/></svg></button>
+            <div class="acc-body"><div><p>prify.js 按 id/class 全局接管：缺 id 时静默降级（游离 div 兜底），因此同一套脚本可以服务多个模板页。</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== CTA 订阅 ====== -->
+  <section id="cta">
+    <div class="container">
+      <div class="cta-card reveal">
+        <h2>准备好点亮你的产品了吗？</h2>
+        <p>加入 236,000+ 开发者，让 Material You 与 Fluent 在你的界面里共生。</p>
+        <!-- #ctaForm：提交时正则校验邮箱，失败加 .invalid + shake，成功清空并弹 snackbar -->
+        <form class="cta-form" id="ctaForm" novalidate>
+          <input type="email" id="ctaMail" placeholder="you@company.com" aria-label="邮箱地址">
+          <button class="btn btn-lg rip" type="submit" id="ctaSubmit"><svg class="icon"><use href="#i-sparkles"/></svg>订阅更新</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ====== 页脚（.foot-grid-2：精简两列，链接全部指向本页存在的锚点） ====== -->
+<footer>
+  <div class="container">
+    <div class="foot-grid foot-grid-2">
+      <div class="foot-brand">
+        <a class="brand" href="#top"><svg><use href="#i-logo"/></svg>Prify<em>Design</em></a>
+        <p>基础模板页：完整外壳 + 表单与核心组件的纯 HTML 展示。</p>
+        <div class="pdots" id="pdotsFoot"></div>
+      </div>
+      <div class="foot-col"><h4>页面分区</h4><a href="#components">组件库</a><a href="#forms">表单控件</a><a href="#feedback">反馈与状态</a><a href="#navs">导航组件</a><a href="#cta">订阅更新</a></div>
+      <div class="foot-col"><h4>页面元素</h4><a href="#top">回到顶部</a><a href="#hero">Hero 演示</a><a href="#btns">按钮家族</a><a href="#formWin">表单窗口</a><a href="#badges">徽章与提示</a></div>
+    </div>
+    <!-- 调色板色卡：prify.js 的 renderPaletteBar() 注入 -->
+    <div class="palette-bar" id="paletteBar"></div>
+    <div class="foot-bottom">
+      <span>© 2026 Prify Design · base.html 模板页 · 保留所有权利</span>
+      <span>当前主题：<b id="footTheme">浅色 · 紫罗兰</b></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ====== 任务栏 Dock ======
+     #startBtn 开合开始菜单（#startMenu + #startScrim）；其余按钮的点击行为由 prify.js 绑定：
+     #dockHome 回顶、#dockGrid 滚到 #components、#dockTheme 切换主题、#dockShare 弹分享提示。
+     data-tip 是纯 CSS 悬停气泡。 -->
+<div class="dock" id="dock">
+  <button class="dock-btn rip" id="startBtn" aria-label="开始菜单" aria-expanded="false"><span class="start-logo"><i></i><i></i><i></i><i></i></span></button>
+  <span class="dock-sep"></span>
+  <button class="dock-btn rip" data-tip="回到顶部" id="dockHome"><svg class="icon"><use href="#i-home"/></svg></button>
+  <button class="dock-btn rip" data-tip="组件库" id="dockGrid"><svg class="icon"><use href="#i-grid"/></svg></button>
+  <button class="dock-btn rip" data-tip="深浅主题" id="dockTheme"><svg class="icon"><use href="#i-moon"/></svg></button>
+  <button class="dock-btn rip" data-tip="分享本页" id="dockShare"><svg class="icon"><use href="#i-share"/></svg></button>
+</div>
+
+<!-- ====== 开始菜单 ======
+     #startScrim 是遮罩（点击关闭）；#smSearch 输入时实时过滤 .sm-app（按文字匹配）；
+     #smGrid 里的 .sm-app 用 data-app 取名，点击后 prify.js 弹 snackbar 并收起菜单。 -->
+<div class="start-scrim" id="startScrim"></div>
+<div class="start-menu" id="startMenu" role="dialog" aria-label="开始菜单">
+  <div class="sm-search">
+    <svg class="icon" style="color:var(--on-surface-var)"><use href="#i-search"/></svg>
+    <input type="text" id="smSearch" placeholder="搜索应用、文件与设置…" autocomplete="off">
+  </div>
+  <div class="sm-section"><span>已固定</span><a href="#components">组件库 ›</a></div>
+  <div class="sm-grid" id="smGrid">
+    <button class="sm-app rip" data-app="邮件"><span class="ai" style="background:linear-gradient(135deg,#1A73E8,#4FC3F7)"><svg class="icon"><use href="#i-mail"/></svg></span><span>邮件</span></button>
+    <button class="sm-app rip" data-app="日历"><span class="ai" style="background:linear-gradient(135deg,#E8710A,#FFB74D)"><svg class="icon"><use href="#i-calendar"/></svg></span><span>日历</span></button>
+    <button class="sm-app rip" data-app="Prify AI"><span class="ai" style="background:linear-gradient(135deg,#7C4DFF,#B388FF)"><svg class="icon"><use href="#i-sparkles"/></svg></span><span>Prify AI</span></button>
+    <button class="sm-app rip" data-app="设置"><span class="ai" style="background:linear-gradient(135deg,#546E7A,#90A4AE)"><svg class="icon"><use href="#i-sliders"/></svg></span><span>设置</span></button>
+    <button class="sm-app rip" data-app="时钟"><span class="ai" style="background:linear-gradient(135deg,#00897B,#4DB6AC)"><svg class="icon"><use href="#i-clock"/></svg></span><span>时钟</span></button>
+    <button class="sm-app rip" data-app="天气"><span class="ai" style="background:linear-gradient(135deg,#039BE5,#81D4FA)"><svg class="icon"><use href="#i-cloud-sun"/></svg></span><span>天气</span></button>
+    <button class="sm-app rip" data-app="相册"><span class="ai" style="background:linear-gradient(135deg,#D81B60,#F48FB1)"><svg class="icon"><use href="#i-image"/></svg></span><span>相册</span></button>
+    <button class="sm-app rip" data-app="音乐"><span class="ai" style="background:linear-gradient(135deg,#8E24AA,#CE93D8)"><svg class="icon"><use href="#i-music"/></svg></span><span>音乐</span></button>
+    <button class="sm-app rip" data-app="终端"><span class="ai" style="background:linear-gradient(135deg,#37474F,#78909C)"><svg class="icon"><use href="#i-terminal"/></svg></span><span>终端</span></button>
+    <button class="sm-app rip" data-app="文件"><span class="ai" style="background:linear-gradient(135deg,#F9A825,#FFE082)"><svg class="icon"><use href="#i-folder"/></svg></span><span>文件</span></button>
+    <button class="sm-app rip" data-app="笔记"><span class="ai" style="background:linear-gradient(135deg,#43A047,#A5D6A7)"><svg class="icon"><use href="#i-pen"/></svg></span><span>笔记</span></button>
+    <button class="sm-app rip" data-app="计算器"><span class="ai" style="background:linear-gradient(135deg,#5E35B1,#9575CD)"><svg class="icon"><use href="#i-calc"/></svg></span><span>计算器</span></button>
+  </div>
+  <div class="sm-section"><span>推荐项目</span></div>
+  <div class="sm-reco">
+    <button class="sm-reco-item rip"><svg class="icon"><use href="#i-image"/></svg><div><div class="rt">壁纸-落日.png</div><div class="rs">刚刚 · 桌面</div></div></button>
+    <button class="sm-reco-item rip"><svg class="icon"><use href="#i-code"/></svg><div><div class="rt">tokens.json</div><div class="rs">2 小时前 · 文档</div></div></button>
+    <button class="sm-reco-item rip"><svg class="icon"><use href="#i-pen"/></svg><div><div class="rt">设计走查清单</div><div class="rs">昨天 · 笔记</div></div></button>
+    <button class="sm-reco-item rip"><svg class="icon"><use href="#i-folder"/></svg><div><div class="rt">Prify v5.3 发布包</div><div class="rs">周三 · 下载</div></div></button>
+  </div>
+  <div class="sm-footer">
+    <div class="sm-user"><span class="avatar" style="background:linear-gradient(135deg,var(--primary),var(--tertiary))">P</span><span class="un">Prify 用户</span></div>
+    <button class="icon-btn rip" id="powerBtn" aria-label="电源" data-tip="电源"><svg class="icon"><use href="#i-power"/></svg></button>
+  </div>
+</div>
+
+<!-- ====== 对话框（全页单例，setDialogContent() 可换内容） ====== -->
+<div class="dialog-wrap" id="dialogWrap">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="dialog-icon" id="dlgIcon"><svg class="icon"><use href="#i-sparkles"/></svg></div>
+    <h3 id="dlgTitle">订阅 Prify 更新</h3>
+    <p class="dtext"><span id="dlgDesc">每周一封，只发干货：新组件、设计走查与动效配方。随时可退订。</span></p>
+    <div class="tf" id="dlgTf"><input type="email" id="dlgMail" placeholder=" "><label for="dlgMail">你的邮箱地址</label></div>
+    <div class="dialog-actions">
+      <button class="btn btn-text rip" id="dlgCancel">取消</button>
+      <button class="btn btn-filled rip" id="dlgOk">立即订阅</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Snackbar（全页单例，snackbar(text, actionText, cb) 调用） ====== -->
+<div class="snackbar" id="snackbar"><span class="sb-bar"></span><span id="sbText"></span><button id="sbAction"></button></div>
+
+<!-- ====== FAB：滚过 560px 浮出，点击回顶 ====== -->
+<button class="fab rip" id="fab"><svg class="icon"><use href="#i-arrow-up"/></svg><span class="label">回到顶部</span></button>
+
+<!-- prify.js 无 defer，必须在 icons.js 之后、</body> 前同步执行 -->
+<script src="prify.js"></script>
+</body>
+</html>

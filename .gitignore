@@ -1,0 +1,16 @@
+# 本地备份
+*.bak
+
+# 仅本地测试用，不随仓库发布
+index.html
+serve.py
+NOTE.md
+prify.html
+iconlist.html
+
+# 服务器与系统产物
+server.log
+server.pid
+*.log
+.DS_Store
+Thumbs.db
