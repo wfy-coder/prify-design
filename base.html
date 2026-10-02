@@ -51,8 +51,9 @@
       <a href="#cta">订阅</a>
     </nav>
     <div class="top-actions">
-      <!-- #githubBtn → prify.js 给一条 snackbar 提示；数字是演示文案 -->
-      <button class="github-btn rip" id="githubBtn"><svg class="icon"><use href="#i-code"/></svg><span>GitHub · 18k</span></button>
+      <!-- #githubBtn → 真实仓库链接（新标签页打开），点击行为由 <a href> 承担、无需脚本；
+           · 18k 是演示数字，README 已声明星数为虚构 -->
+      <a class="github-btn rip" id="githubBtn" href="https://github.com/wfy-coder/prify-design" target="_blank" rel="noopener"><svg class="icon"><use href="#i-code"/></svg><span>GitHub · 18k</span></a>
       <!-- #themeBtn 切换深浅主题（prify.js 改 html[data-theme] 并换 #themeIcon 的图标与 localStorage） -->
       <button class="icon-btn rip" id="themeBtn" aria-label="切换深浅主题"><svg class="icon" id="themeIcon"><use href="#i-moon"/></svg></button>
       <button class="icon-btn rip menu-btn" id="menuBtn" aria-label="打开菜单"><svg class="icon"><use href="#i-menu"/></svg></button>

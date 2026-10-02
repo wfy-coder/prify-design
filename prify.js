@@ -489,7 +489,7 @@ async function share() {
 }
 $('#shareBtn').onclick = share;
 $('#dockShare').onclick = share;
-$('#githubBtn').onclick = () => snackbar('演示环境：GitHub 仓库为虚构链接');
+/* #githubBtn 已在 base.html 里做成真实仓库链接（<a target="_blank">），不需要脚本接管 */
 
 /* ================= 按钮行为（含图标动画） ================= */
 function flyIcon(btn) { btn.classList.remove('fly'); void btn.offsetWidth; btn.classList.add('fly'); }

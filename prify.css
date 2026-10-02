@@ -201,7 +201,7 @@ body.ready .topbar{transform:none}
 .nav a.active{color:var(--primary)}
 .nav a.active::after{content:"";position:absolute;left:50%;bottom:2px;translate:-50% 0;width:16px;height:3px;border-radius:3px 3px 0 0;background:var(--primary);animation:popIn .35s var(--spring)}
 .top-actions{display:flex;align-items:center;gap:8px}
-.github-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:var(--r-full);border:1px solid var(--outline-var);background:transparent;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s,transform .2s var(--ease-emph)}
+.github-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:var(--r-full);border:1px solid var(--outline-var);background:transparent;font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none;color:inherit;transition:background .2s,border-color .2s,transform .2s var(--ease-emph)}
 .github-btn:hover{background:var(--surface-c-high);transform:translateY(-1px)}
 .menu-btn{display:none}
 @media(max-width:960px){.nav{display:none}.menu-btn{display:inline-flex}.github-btn span{display:none}.github-btn{width:38px;padding:0;justify-content:center}}
